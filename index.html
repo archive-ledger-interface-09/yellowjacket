@@ -1,981 +1,1004 @@
-import React, { useEffect, useMemo, useState } from "react";
-import {
-  AlertTriangle,
-  Activity,
-  Lock,
-  Shield,
-  Radar,
-  Binary,
-  Siren,
-  Eye,
-  Users,
-  FlaskConical,
-  ScanLine,
-  Cpu,
-  ChevronRight,
-  Search,
-  TerminalSquare,
-  Wifi,
-  Crosshair,
-  TimerReset,
-  HeartPulse,
-  Map,
-  BellRing,
-  Orbit,
-  Waves,
-  Gauge,
-  Flame,
-  Skull,
-  Footprints,
-} from "lucide-react";
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BLACK CHAMBER CONTROL</title>
+  <style>
+    :root {
+      --bg: #060503;
+      --bg2: #0d0a05;
+      --panel: rgba(0, 0, 0, 0.45);
+      --panel2: rgba(255, 245, 210, 0.04);
+      --border: rgba(255, 230, 150, 0.12);
+      --border-strong: rgba(255, 230, 150, 0.24);
+      --text: #f4edcc;
+      --muted: #8d8467;
+      --bright: #fff4c0;
+      --accent: #ffd86b;
+      --accent2: #ffbf47;
+      --danger: #ff9b58;
+      --shadow: 0 0 40px rgba(255, 214, 107, 0.08);
+      --radius: 24px;
+      --radius-sm: 18px;
+      --grid: rgba(255, 233, 164, 0.05);
+    }
 
-const LOGIN_KEY = "DOA//NULL-ASHEN_7QX::YELLOWJACKET";
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text); font-family: Consolas, "Courier New", monospace; }
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(circle at top, rgba(255, 214, 107, 0.12), transparent 26%),
+        linear-gradient(to bottom, rgba(0,0,0,0.12), rgba(0,0,0,0.9)),
+        repeating-linear-gradient(to bottom, rgba(255,255,255,0.025) 0, rgba(255,255,255,0.025) 1px, transparent 1px, transparent 4px);
+      pointer-events: none;
+      z-index: 0;
+    }
+    body::after {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(var(--grid) 1px, transparent 1px),
+        linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+      background-size: 24px 24px;
+      opacity: 0.5;
+      pointer-events: none;
+      z-index: 0;
+    }
 
-const nav = [
-  { id: "overview", label: "CONTROL CORE", icon: Radar },
-  { id: "ops", label: "LIVE OPS", icon: Crosshair },
-  { id: "roster", label: "OPERATOR GRID", icon: Users },
-  { id: "surveillance", label: "SURVEILLANCE", icon: Eye },
-  { id: "biometrics", label: "BIOMETRICS", icon: HeartPulse },
-  { id: "routing", label: "SYSTEM ROUTING", icon: Binary },
-  { id: "containment", label: "CONTAINMENT", icon: Shield },
-];
+    .hidden { display: none !important; }
 
-const alerts = [
-  "DOA relay spine breached for 00:02:14 before false telemetry restored.",
-  "Operator FISH hunger-state markers elevated after corridor blood cleanup event.",
-  "Subfloor mold pressure bloom detected beneath TOMCAT decon chamber.",
-  "Three hostile cameras rewritten and looped inside Sector NORO-4.",
-  "Unauthorized phrase-capture event recorded in comms parser: 'who is breathing in the vents'.",
-  "Containment lamps in wing C cycling at irregular intervals. Cause disputed.",
-];
+    .login-screen {
+      position: relative;
+      z-index: 1;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 32px;
+    }
+    .login-grid {
+      width: min(1400px, 100%);
+      display: grid;
+      grid-template-columns: 1.25fr 0.9fr;
+      gap: 24px;
+    }
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 28px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(10px);
+    }
+    .panel-inner { padding: 28px; }
+    .title-row { display: flex; align-items: center; gap: 14px; margin-bottom: 24px; }
+    .iconbox {
+      width: 52px; height: 52px; border-radius: 18px; border: 1px solid var(--border);
+      display: grid; place-items: center; background: rgba(255,255,255,0.03); color: var(--bright);
+      font-size: 24px;
+    }
+    .eyebrow { font-size: 11px; text-transform: uppercase; letter-spacing: 0.38em; color: var(--muted); }
+    h1, h2, h3, h4, p { margin: 0; }
+    .hero-title { margin-top: 10px; font-size: 40px; letter-spacing: 0.18em; color: var(--bright); }
+    .boot-list { display: grid; gap: 12px; }
+    .boot-item {
+      border: 1px solid var(--border); background: var(--panel2); border-radius: 18px; padding: 14px 16px;
+      display: flex; gap: 14px; align-items: center; color: #d9d0af; font-size: 14px;
+    }
+    .boot-num { color: var(--muted); font-size: 10px; letter-spacing: 0.35em; }
+    .metric-grid-3, .metric-grid-4 { display: grid; gap: 14px; }
+    .metric-grid-3 { grid-template-columns: repeat(3, 1fr); margin-top: 24px; }
+    .metric-grid-4 { grid-template-columns: repeat(4, 1fr); }
+    .mini-card, .card {
+      border: 1px solid var(--border); border-radius: var(--radius); background: rgba(0,0,0,0.35);
+    }
+    .mini-card { padding: 16px; }
+    .card { padding: 20px; }
+    .mini-val { margin-top: 10px; font-size: 30px; color: var(--bright); }
+    .spark {
+      display: flex; align-items: end; gap: 4px; height: 46px; margin-top: 10px;
+    }
+    .spark span {
+      flex: 1; border-radius: 4px 4px 0 0;
+      background: linear-gradient(to top, rgba(255, 216, 107, 0.22), rgba(255, 244, 192, 0.85));
+    }
 
-const operators = [
-  {
-    id: "TOMCAT",
-    kind: "BIO-RECURRENT",
-    status: "DEPLOYABLE",
-    location: "SUBLEVEL CORRIDOR GRID / WEST RAIL",
-    role: "BREACH / BIOLOGICAL PERSISTENCE",
-    pulse: 43,
-    stress: 51,
-    sync: 84,
-    risk: 78,
-    temp: "31.8C",
-    notes:
-      "Body architecture no longer behaves as intact human anatomy. Structural failure is replaced by wet fungal reinforcement. Fire remains the only discouraging variable that consistently changes behavior.",
-    detail:
-      "Tomcat's station is always marked occupied even when cameras fail to find him. Corridor spores pulse on heat-map sweeps several seconds after he passes. Internal teams do not agree whether this is residue or distributed awareness.",
-    flag: "MOLD LATTICE ACTIVE",
-    accent: "amber",
-  },
-  {
-    id: "FISH",
-    kind: "PREDATORY ADAPTIVE",
-    status: "RESTRICTED",
-    location: "RED KITCHEN HOLD / RESTRAINED ACCESS",
-    role: "CQC / CONSUMPTION-STATE ASSAULT",
-    pulse: 118,
-    stress: 94,
-    sync: 62,
-    risk: 97,
-    temp: "39.4C",
-    notes:
-      "Appetite-linked combat state remains the unit's most reliable advantage and largest liability. Subject mood destabilizes under blood scent, panic audio, and prolonged fasting. Current behavioral thread includes non-assigned fixation on operator TOMCAT.",
-    detail:
-      "Fish speaks cleanly until she doesn't. Once the body decides a room belongs to her, posture lowers, hands open, and all restraint becomes social rather than biological. Her logs mention Tomcat more often than mission data justifies.",
-    flag: "PRIMAL CASCADE RISK",
-    accent: "yellow",
-  },
-  {
-    id: "CINDER",
-    kind: "THERMAL SANITIZER",
-    status: "ACTIVE",
-    location: "BURN CHANNEL / SOUTH RESPONSE BAY",
-    role: "PURGE / AREA DENIAL",
-    pulse: 74,
-    stress: 40,
-    sync: 89,
-    risk: 61,
-    temp: "37.1C",
-    notes:
-      "Assigned to erase biological spillover, failed host matter, and anything in a corridor still moving after the medic says it shouldn't be.",
-    detail:
-      "Cinder speaks to ignition systems like they are dogs she trained herself. This has not affected performance. It has affected morale.",
-    flag: "IGNITION-READY",
-    accent: "orange",
-  },
-  {
-    id: "VEIL",
-    kind: "COGNITIVE INTERFERENCE",
-    status: "ACTIVE",
-    location: "MIRROR STACK / SIGNAL SUITE",
-    role: "COUNTER-INTEL / PERCEPTION DAMAGE",
-    pulse: 58,
-    stress: 26,
-    sync: 92,
-    risk: 68,
-    temp: "36.0C",
-    notes:
-      "Most effective when she is seen briefly and remembered badly. Useful against command systems that trust eyewitness certainty more than logs.",
-    detail:
-      "Operators swear she stands in slightly different places every time the feed refreshes. Review shows she does not. Or the review was altered. Nobody enjoys checking.",
-    flag: "VISUAL DRIFT",
-    accent: "stone",
-  },
-  {
-    id: "GAUGE",
-    kind: "PRESSURE FRAME",
-    status: "ACTIVE",
-    location: "LIFT SHAFT 02 / MOBILE COVER",
-    role: "HEAVY ENTRY / DOOR DENIAL",
-    pulse: 67,
-    stress: 47,
-    sync: 86,
-    risk: 49,
-    temp: "36.7C",
-    notes:
-      "Reinforced skeletal housing and hydraulic assist weave enable short-duration impact events that would pulp ordinary soldiers and most architecture.",
-    detail:
-      "Gauge apologizes to walls before going through them. Nobody knows if that makes him more unsettling or less.",
-    flag: "FRAME STABLE",
-    accent: "amber",
-  },
-];
+    .input-label { display: block; margin-bottom: 10px; font-size: 10px; letter-spacing: 0.34em; text-transform: uppercase; color: var(--muted); }
+    input {
+      width: 100%; padding: 18px 16px; border-radius: 18px; border: 1px solid var(--border);
+      background: #111008; color: var(--bright); outline: none; font-family: inherit; letter-spacing: 0.12em;
+    }
+    input:focus { border-color: var(--border-strong); }
+    button {
+      font-family: inherit; cursor: pointer;
+    }
+    .unlock-btn {
+      margin-top: 14px; width: 100%; padding: 16px; border-radius: 18px; border: 1px solid var(--border);
+      color: var(--bright); text-transform: uppercase; letter-spacing: 0.28em;
+      background: linear-gradient(to right, rgba(255, 240, 170, 0.10), rgba(255, 191, 71, 0.06));
+    }
+    .unlock-btn:hover, .nav-btn:hover, .op-btn:hover { border-color: var(--border-strong); }
+    .warn-box, .status-box {
+      margin-top: 18px; border: 1px solid var(--border); background: var(--panel2); border-radius: 18px; padding: 14px;
+      line-height: 1.7; font-size: 12px; color: #b8af91;
+    }
+    .fail { margin-top: 14px; color: #ffd2a7; border-color: rgba(255, 155, 88, 0.25); }
 
-const liveMissions = [
-  {
-    codename: "YELLOW CHOIR",
-    zone: "DOA MUNICIPAL SHELL / COLORADO FRONT",
-    progress: 72,
-    state: "UPLINK STOLEN",
-    summary:
-      "Special unit inserted through maintenance artery beneath public records annex. Goal is to seize route-authority credentials and poison DOA emergency dispatch with false positives.",
-  },
-  {
-    codename: "HOLLOW GLASS",
-    zone: "RESEARCH WING N-13",
-    progress: 39,
-    state: "CAMERAS LOOPED",
-    summary:
-      "Surveillance rewrite underway. Veil and Cinder are holding corridor confidence collapse while internal biometric locks are mirrored to our stack.",
-  },
-  {
-    codename: "CROWN ROT",
-    zone: "SUBTERRANEAN PIPELINE / RED MILE",
-    progress: 88,
-    state: "CONTAINMENT FAILING",
-    summary:
-      "Tomcat residue detected beyond projected route. Possible unplanned spread event or intentional seeding. Command has not decided which answer is worse.",
-  },
-];
+    .app {
+      position: relative; z-index: 1; min-height: 100vh;
+      display: grid; grid-template-columns: 260px 1fr 390px;
+    }
+    .sidebar, .rightbar, .main {
+      min-height: 100vh; padding: 20px;
+    }
+    .sidebar { border-right: 1px solid var(--border); background: rgba(0,0,0,0.4); }
+    .main { border-right: 1px solid var(--border); background: rgba(0,0,0,0.2); }
+    .rightbar { background: rgba(0,0,0,0.38); }
 
-const surveillanceFeeds = [
-  {
-    title: "CAM 04 // HOLD CORRIDOR",
-    subtitle: "motion persists after subject departure",
-    level: 89,
-    icon: Footprints,
-  },
-  {
-    title: "CAM 11 // RESTRAINT KITCHEN",
-    subtitle: "subject smiling at empty wall",
-    level: 97,
-    icon: Skull,
-  },
-  {
-    title: "CAM 07 // BURN CHANNEL",
-    subtitle: "thermal bloom approaching threshold",
-    level: 71,
-    icon: Flame,
-  },
-  {
-    title: "CAM 19 // SIGNAL SUITE",
-    subtitle: "feed differs from eyewitness testimony",
-    level: 63,
-    icon: Waves,
-  },
-];
+    .brandbox { padding: 16px; margin-bottom: 20px; }
+    .timebox {
+      margin-top: 14px; border: 1px solid var(--border); border-radius: 16px; padding: 12px;
+      color: var(--muted); text-transform: uppercase; letter-spacing: 0.24em; font-size: 10px; background: rgba(0,0,0,0.3);
+    }
+    .nav-stack { display: grid; gap: 8px; }
+    .nav-btn {
+      width: 100%; text-align: left; padding: 14px 16px; border-radius: 18px; border: 1px solid rgba(255, 230, 150, 0.06);
+      background: rgba(0,0,0,0.2); color: #aaa082; text-transform: uppercase; letter-spacing: 0.24em; font-size: 12px;
+    }
+    .nav-btn.active {
+      color: var(--bright); border-color: var(--border-strong);
+      background: linear-gradient(to right, rgba(255, 240, 170, 0.10), rgba(255, 191, 71, 0.04));
+    }
+    .section-title { margin-top: 2px; font-size: 24px; letter-spacing: 0.14em; color: var(--bright); }
+    .topbar {
+      display: flex; justify-content: space-between; align-items: center; gap: 16px;
+      padding: 18px 20px; margin-bottom: 18px;
+    }
+    .top-pill {
+      border: 1px solid var(--border); border-radius: 16px; padding: 12px 14px; font-size: 11px;
+      text-transform: uppercase; letter-spacing: 0.24em; color: var(--bright); background: var(--panel2);
+    }
+    .grid-2 { display: grid; grid-template-columns: 1.15fr 0.85fr; gap: 18px; }
+    .grid-ops { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 18px; }
+    .grid-roster { display: grid; grid-template-columns: 0.82fr 1.18fr; gap: 18px; }
+    .grid-even-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 18px; }
+    .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+    .stack { display: grid; gap: 14px; }
+    .subtle { color: var(--muted); font-size: 10px; text-transform: uppercase; letter-spacing: 0.3em; }
+    .copy { margin-top: 12px; color: #b9b092; font-size: 13px; line-height: 1.8; }
 
-function useTypedSequence() {
-  const [buffer, setBuffer] = useState("");
+    .radar-wrap { display: grid; grid-template-columns: 320px 1fr; gap: 18px; }
+    .radar {
+      position: relative; aspect-ratio: 1; border-radius: 50%; border: 1px solid var(--border);
+      background: radial-gradient(circle at center, rgba(255,248,200,0.10), rgba(0,0,0,0.88) 64%);
+      overflow: hidden;
+    }
+    .ring, .cross-v, .cross-h, .blip, .sweep { position: absolute; }
+    .ring { border: 1px solid rgba(255, 230, 150, 0.10); border-radius: 50%; }
+    .r1 { inset: 20px; } .r2 { inset: 40px; } .r3 { inset: 30%; }
+    .cross-v { left: 50%; top: 0; width: 1px; height: 100%; transform: translateX(-50%); background: rgba(255,230,150,0.10); }
+    .cross-h { top: 50%; left: 0; width: 100%; height: 1px; transform: translateY(-50%); background: rgba(255,230,150,0.10); }
+    .sweep {
+      inset: 0;
+      background: conic-gradient(from 0deg, rgba(255,240,170,0.38), rgba(255,240,170,0) 20%, rgba(255,240,170,0) 100%);
+      animation: spin 6s linear infinite;
+    }
+    .blip { width: 10px; height: 10px; border-radius: 50%; background: var(--bright); box-shadow: 0 0 16px rgba(255,248,180,0.85); }
+    .b1 { left: 62%; top: 28%; } .b2 { left: 37%; top: 61%; } .b3 { left: 72%; top: 55%; width: 7px; height: 7px; }
+    .radar-label { position: absolute; bottom: 14px; left: 50%; transform: translateX(-50%); font-size: 10px; color: rgba(255,244,192,0.7); letter-spacing: 0.32em; text-transform: uppercase; }
 
-  useEffect(() => {
-    const handler = (e) => {
-      if (e.key.length !== 1) return;
-      setBuffer((prev) => (prev + e.key.toLowerCase()).slice(-24));
-    };
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
-  }, []);
+    .mission-card, .alert-card, .feed-card, .node-card, .contain-card, .remark-card, .operator-detail, .surv-card {
+      border: 1px solid var(--border); border-radius: 22px; background: var(--panel2); padding: 16px;
+    }
+    .mission-head, .split-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+    .tag {
+      border: 1px solid var(--border); border-radius: 999px; padding: 6px 10px; font-size: 10px;
+      text-transform: uppercase; letter-spacing: 0.26em; color: rgba(255,244,192,0.8);
+    }
+    .progress { margin-top: 14px; height: 8px; border-radius: 999px; background: rgba(0,0,0,0.4); overflow: hidden; border: 1px solid var(--border); }
+    .progress > span { display: block; height: 100%; background: linear-gradient(to right, rgba(255,244,192,0.9), rgba(255,191,71,0.9)); }
+    .progress-note { margin-top: 8px; text-align: right; font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--muted); }
 
-  return buffer;
-}
+    .bar-group { display: grid; gap: 10px; margin-top: 14px; }
+    .bar-label { display: flex; justify-content: space-between; font-size: 10px; letter-spacing: 0.28em; text-transform: uppercase; color: var(--muted); }
+    .bar-track { height: 8px; border-radius: 999px; background: rgba(0,0,0,0.4); overflow: hidden; border: 1px solid var(--border); }
+    .bar-fill { height: 100%; background: linear-gradient(to right, rgba(255,244,192,0.82), rgba(255,191,71,0.88), rgba(255,155,88,0.9)); }
 
-function MetricBar({ value, label, danger = false }) {
-  return (
-    <div className="space-y-1">
-      <div className="flex items-center justify-between text-[10px] uppercase tracking-[0.3em] text-zinc-400">
-        <span>{label}</span>
-        <span className={danger ? "text-amber-200" : "text-zinc-200"}>{value}%</span>
-      </div>
-      <div className="h-2 overflow-hidden rounded-full border border-amber-200/10 bg-black/40">
-        <div
-          className={`h-full rounded-full ${danger ? "bg-gradient-to-r from-yellow-200 via-amber-300 to-orange-300" : "bg-gradient-to-r from-zinc-200 via-amber-200 to-yellow-200"}`}
-          style={{ width: `${value}%` }}
-        />
-      </div>
-    </div>
-  );
-}
+    .feed-graph {
+      margin-top: 14px; height: 80px; border-radius: 18px; border: 1px solid var(--border); padding: 10px;
+      background: linear-gradient(180deg, rgba(255,247,214,0.08), rgba(0,0,0,0.0)), repeating-linear-gradient(to bottom, rgba(255,255,255,0.03) 0, rgba(255,255,255,0.03) 1px, transparent 1px, transparent 4px);
+      display: flex; gap: 4px; align-items: end;
+    }
+    .feed-graph span { flex: 1; border-radius: 4px 4px 0 0; background: linear-gradient(to top, rgba(255,191,71,0.25), rgba(255,244,192,0.85)); }
 
-function SmallLine({ points = [] }) {
-  const max = Math.max(...points, 1);
-  const step = 100 / Math.max(points.length - 1, 1);
-  const d = points
-    .map((p, i) => `${i === 0 ? "M" : "L"}${i * step},${34 - (p / max) * 28}`)
-    .join(" ");
-  return (
-    <svg viewBox="0 0 100 34" className="h-12 w-full">
-      <path d={d} fill="none" stroke="currentColor" strokeWidth="1.5" className="text-amber-100/90" />
-    </svg>
-  );
-}
+    .ops-mini-grid, .bio-mini-grid { display: grid; gap: 12px; }
+    .ops-mini-grid { grid-template-columns: repeat(3, 1fr); }
+    .bio-mini-grid { grid-template-columns: repeat(4, 1fr); }
+    .op-btn {
+      width: 100%; text-align: left; padding: 16px; border-radius: 22px; border: 1px solid var(--border);
+      background: var(--panel2); color: var(--text);
+    }
+    .op-btn.active { border-color: var(--border-strong); background: linear-gradient(to right, rgba(255,240,170,0.10), rgba(255,191,71,0.04)); }
 
-function RadarSweep() {
-  return (
-    <div className="relative aspect-square w-full overflow-hidden rounded-full border border-amber-100/20 bg-[radial-gradient(circle_at_center,rgba(255,248,200,0.10),rgba(0,0,0,0.88)_64%)]">
-      <div className="absolute inset-5 rounded-full border border-amber-100/10" />
-      <div className="absolute inset-10 rounded-full border border-amber-100/10" />
-      <div className="absolute inset-[30%] rounded-full border border-amber-100/10" />
-      <div className="absolute left-1/2 top-0 h-full w-px -translate-x-1/2 bg-amber-100/10" />
-      <div className="absolute left-0 top-1/2 h-px w-full -translate-y-1/2 bg-amber-100/10" />
-      <div className="absolute inset-0 animate-[spin_6s_linear_infinite] bg-[conic-gradient(from_0deg,rgba(255,240,170,0.38),rgba(255,240,170,0.00)_20%,rgba(255,240,170,0.00)_100%)]" />
-      <span className="absolute left-[62%] top-[28%] h-2 w-2 rounded-full bg-amber-100 shadow-[0_0_16px_rgba(255,248,180,0.9)]" />
-      <span className="absolute left-[37%] top-[61%] h-2 w-2 rounded-full bg-yellow-200 shadow-[0_0_16px_rgba(255,248,180,0.9)]" />
-      <span className="absolute left-[72%] top-[55%] h-1.5 w-1.5 rounded-full bg-orange-200 shadow-[0_0_16px_rgba(255,248,180,0.9)]" />
-      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-[10px] uppercase tracking-[0.35em] text-amber-100/70">
-        threat convergence
-      </div>
-    </div>
-  );
-}
+    .route-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 18px; }
+    .cam-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+    .surv-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+    .screen-box {
+      margin-top: 14px; height: 208px; border-radius: 24px; border: 1px solid var(--border);
+      background: linear-gradient(180deg, rgba(255,247,214,0.08), rgba(0,0,0,0.0)), repeating-linear-gradient(to bottom, rgba(255,255,255,0.03) 0, rgba(255,255,255,0.03) 1px, transparent 1px, transparent 4px);
+      padding: 14px;
+    }
+    .screen-grid {
+      height: 100%; display: grid; grid-template-columns: repeat(8, 1fr); gap: 4px;
+    }
+    .screen-grid span { border-radius: 4px; background: rgba(255,255,255,0.05); }
+    .screen-grid span:nth-child(7n) { background: rgba(255,244,192,0.58); }
+    .screen-grid span:nth-child(5n) { background: rgba(255,244,192,0.18); }
 
-function LoginScreen({ onUnlock }) {
-  const [value, setValue] = useState("");
-  const [fail, setFail] = useState(false);
-  const bootLines = [
-    "AUTHORITY CHAIN // NULL GOVERNANCE CELL",
-    "MISSION CONTROL INSTANCE // BLACK CHAMBER",
-    "WARNING // UNIFIED OVERSIGHT DENIES THIS NODE EXISTS",
-    "ROUTING // COUNTER-DOA COMMAND STACK",
-  ];
+    .overlay, .toast, .top-strip {
+      position: fixed; z-index: 20; border: 1px solid var(--border-strong); background: rgba(0,0,0,0.86); box-shadow: var(--shadow);
+    }
+    .overlay {
+      inset: 0; display: none; align-items: center; justify-content: center; backdrop-filter: blur(6px);
+    }
+    .overlay.show { display: flex; }
+    .overlay-box {
+      border: 1px solid var(--border); border-radius: 28px; background: rgba(0,0,0,0.82); padding: 28px 34px; text-align: center;
+    }
+    .overlay-big { margin-top: 16px; font-size: 38px; letter-spacing: 0.18em; color: var(--bright); }
+    .toast {
+      display: none; max-width: 430px; border-radius: 24px; padding: 18px;
+    }
+    .toast.show { display: block; }
+    #toast-hunger { right: 24px; bottom: 24px; }
+    #toast-mildew { left: 24px; top: 24px; max-width: 360px; }
+    .top-strip {
+      display: none; left: 0; right: 0; top: 0; border-left: none; border-right: none; border-top: none;
+      padding: 12px 16px; text-align: center; font-size: 10px; color: rgba(255,244,192,0.7);
+      letter-spacing: 0.38em; text-transform: uppercase;
+    }
+    .top-strip.show { display: block; }
+    .smile-overlay {
+      position: fixed; inset: 0; z-index: 19; display: none; align-items: center; justify-content: center; background: rgba(0,0,0,0.7);
+    }
+    .smile-overlay.show { display: flex; }
+    .smile-box { text-align: center; color: rgba(255,244,192,0.92); }
+    .smile-face { font-size: 68px; }
+    .smile-note { margin-top: 14px; font-size: 10px; letter-spacing: 0.5em; text-transform: uppercase; color: rgba(255,244,192,0.56); }
 
-  return (
-    <div className="relative min-h-screen overflow-hidden bg-[#090805] text-[#f5eecb]">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(252,211,77,0.12),transparent_38%),linear-gradient(to_bottom,rgba(0,0,0,0.08),rgba(0,0,0,0.85)),repeating-linear-gradient(to_bottom,rgba(255,255,255,0.03)_0,rgba(255,255,255,0.03)_1px,transparent_1px,transparent_3px)]" />
-      <div className="absolute inset-0 opacity-20 [background-image:linear-gradient(rgba(255,230,140,0.08)_1px,transparent_1px),linear-gradient(90deg,rgba(255,230,140,0.08)_1px,transparent_1px)] [background-size:28px_28px]" />
-      <div className="relative z-10 mx-auto flex min-h-screen max-w-7xl flex-col justify-center px-6 py-10">
-        <div className="grid gap-6 lg:grid-cols-[1.25fr_0.9fr]">
-          <div className="rounded-[28px] border border-amber-100/10 bg-black/45 p-8 shadow-[0_0_80px_rgba(255,208,88,0.08)] backdrop-blur-xl">
-            <div className="mb-8 flex items-center gap-3">
-              <div className="rounded-2xl border border-amber-100/10 bg-amber-50/5 p-3">
-                <Shield className="h-7 w-7 text-amber-100" />
-              </div>
-              <div>
-                <div className="text-xs uppercase tracking-[0.45em] text-amber-100/60">counter-doa authority</div>
-                <h1 className="mt-2 text-4xl font-semibold tracking-[0.2em] text-[#fff7d6]">BLACK CHAMBER CONTROL</h1>
-              </div>
-            </div>
+    @keyframes spin { to { transform: rotate(360deg); } }
 
-            <div className="grid gap-3 text-sm text-zinc-300">
-              {bootLines.map((line, i) => (
-                <div key={line} className="flex items-center gap-3 rounded-2xl border border-amber-100/10 bg-amber-50/5 px-4 py-3">
-                  <span className="text-[10px] uppercase tracking-[0.35em] text-amber-100/50">0{i + 1}</span>
-                  <span className="tracking-[0.14em]">{line}</span>
-                </div>
-              ))}
-            </div>
-
-            <div className="mt-8 grid gap-4 md:grid-cols-3">
-              <div className="rounded-2xl border border-amber-100/10 bg-black/30 p-4">
-                <div className="text-[10px] uppercase tracking-[0.3em] text-zinc-500">system posture</div>
-                <div className="mt-3 text-2xl text-amber-50">armed</div>
-                <SmallLine points={[4, 8, 7, 12, 10, 16, 11, 18]} />
-              </div>
-              <div className="rounded-2xl border border-amber-100/10 bg-black/30 p-4">
-                <div className="text-[10px] uppercase tracking-[0.3em] text-zinc-500">uplink theft</div>
-                <div className="mt-3 text-2xl text-amber-50">3 nodes</div>
-                <SmallLine points={[1, 2, 4, 3, 7, 10, 13, 18]} />
-              </div>
-              <div className="rounded-2xl border border-amber-100/10 bg-black/30 p-4">
-                <div className="text-[10px] uppercase tracking-[0.3em] text-zinc-500">active units</div>
-                <div className="mt-3 text-2xl text-amber-50">05 online</div>
-                <SmallLine points={[13, 12, 14, 14, 13, 15, 15, 14]} />
-              </div>
-            </div>
-          </div>
-
-          <div className="rounded-[28px] border border-amber-100/10 bg-black/55 p-8 shadow-[0_0_80px_rgba(255,208,88,0.07)] backdrop-blur-xl">
-            <div className="mb-8 flex items-center gap-3">
-              <Lock className="h-5 w-5 text-amber-100" />
-              <div className="text-xs uppercase tracking-[0.4em] text-amber-100/65">single-point authentication</div>
-            </div>
-
-            <label className="mb-3 block text-[10px] uppercase tracking-[0.35em] text-zinc-500">
-              clearance phrase
-            </label>
-            <input
-              value={value}
-              onChange={(e) => {
-                setValue(e.target.value);
-                if (fail) setFail(false);
-              }}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  if (value === LOGIN_KEY) onUnlock();
-                  else {
-                    setFail(true);
-                    setValue("");
-                  }
-                }
-              }}
-              placeholder="ENTER AUTHORITY STRING"
-              className={`w-full rounded-2xl border bg-[#111008] px-4 py-4 font-mono text-sm tracking-[0.18em] outline-none transition ${
-                fail ? "border-red-300/40 text-red-100" : "border-amber-100/15 text-amber-50 focus:border-amber-100/35"
-              }`}
-            />
-
-            <button
-              onClick={() => {
-                if (value === LOGIN_KEY) onUnlock();
-                else {
-                  setFail(true);
-                  setValue("");
-                }
-              }}
-              className="mt-4 flex w-full items-center justify-center gap-2 rounded-2xl border border-amber-100/15 bg-gradient-to-r from-yellow-100/15 via-amber-200/10 to-orange-200/15 px-4 py-4 text-sm uppercase tracking-[0.35em] text-amber-50 transition hover:border-amber-100/30 hover:bg-amber-100/10"
-            >
-              <TerminalSquare className="h-4 w-4" />
-              unlock chamber
-            </button>
-
-            <div className="mt-6 rounded-2xl border border-amber-100/10 bg-amber-50/5 p-4 text-xs leading-6 text-zinc-400">
-              Unauthorized observers will be logged as decoys in the event stream. This system is designed to look official while denying official ownership.
-            </div>
-
-            {fail && (
-              <div className="mt-4 rounded-2xl border border-red-300/20 bg-red-100/5 px-4 py-3 text-xs uppercase tracking-[0.28em] text-red-100/80">
-                phrase rejected // external pattern detected
-              </div>
-            )}
-
-            <div className="mt-8 grid grid-cols-2 gap-3 text-xs">
-              <div className="rounded-2xl border border-amber-100/10 bg-black/25 p-4">
-                <div className="text-zinc-500">Node Integrity</div>
-                <div className="mt-2 text-2xl text-amber-50">96%</div>
-              </div>
-              <div className="rounded-2xl border border-amber-100/10 bg-black/25 p-4">
-                <div className="text-zinc-500">Looped Cameras</div>
-                <div className="mt-2 text-2xl text-amber-50">18</div>
-              </div>
-            </div>
+    @media (max-width: 1200px) {
+      .app { grid-template-columns: 220px 1fr; }
+      .rightbar { display: none; }
+      .surv-grid { grid-template-columns: repeat(2, 1fr); }
+      .radar-wrap, .grid-2, .grid-ops, .grid-roster { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 900px) {
+      .login-grid, .app { grid-template-columns: 1fr; }
+      .sidebar, .main { min-height: auto; }
+      .metric-grid-4, .metric-grid-3, .cam-grid, .ops-mini-grid, .bio-mini-grid, .route-grid, .surv-grid, .grid-even-2, .grid-3 {
+        grid-template-columns: 1fr;
+      }
+      .radar-wrap { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div id="login-screen" class="login-screen">
+    <div class="login-grid">
+      <section class="panel panel-inner">
+        <div class="title-row">
+          <div class="iconbox">▣</div>
+          <div>
+            <div class="eyebrow">counter-doa authority</div>
+            <h1 class="hero-title">BLACK CHAMBER CONTROL</h1>
           </div>
         </div>
-      </div>
+
+        <div class="boot-list">
+          <div class="boot-item"><span class="boot-num">01</span><span>AUTHORITY CHAIN // NULL GOVERNANCE CELL</span></div>
+          <div class="boot-item"><span class="boot-num">02</span><span>MISSION CONTROL INSTANCE // BLACK CHAMBER</span></div>
+          <div class="boot-item"><span class="boot-num">03</span><span>WARNING // UNIFIED OVERSIGHT DENIES THIS NODE EXISTS</span></div>
+          <div class="boot-item"><span class="boot-num">04</span><span>ROUTING // COUNTER-DOA COMMAND STACK</span></div>
+        </div>
+
+        <div class="metric-grid-3">
+          <div class="mini-card">
+            <div class="eyebrow">system posture</div>
+            <div class="mini-val">armed</div>
+            <div class="spark"><span style="height:18%"></span><span style="height:28%"></span><span style="height:25%"></span><span style="height:44%"></span><span style="height:36%"></span><span style="height:58%"></span><span style="height:42%"></span><span style="height:70%"></span></div>
+          </div>
+          <div class="mini-card">
+            <div class="eyebrow">uplink theft</div>
+            <div class="mini-val">3 nodes</div>
+            <div class="spark"><span style="height:10%"></span><span style="height:14%"></span><span style="height:24%"></span><span style="height:19%"></span><span style="height:37%"></span><span style="height:52%"></span><span style="height:66%"></span><span style="height:78%"></span></div>
+          </div>
+          <div class="mini-card">
+            <div class="eyebrow">active units</div>
+            <div class="mini-val">05 online</div>
+            <div class="spark"><span style="height:60%"></span><span style="height:56%"></span><span style="height:66%"></span><span style="height:64%"></span><span style="height:61%"></span><span style="height:69%"></span><span style="height:67%"></span><span style="height:64%"></span></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel panel-inner">
+        <div class="title-row" style="margin-bottom: 18px;">
+          <div class="eyebrow">single-point authentication</div>
+        </div>
+        <label class="input-label" for="login-input">clearance phrase</label>
+        <input id="login-input" placeholder="ENTER AUTHORITY STRING" />
+        <button class="unlock-btn" id="unlock-btn">unlock chamber</button>
+        <div class="warn-box">Unauthorized observers will be logged as decoys in the event stream. This system is designed to look official while denying official ownership.</div>
+        <div id="login-fail" class="warn-box fail hidden">phrase rejected // external pattern detected</div>
+        <div class="metric-grid-3" style="grid-template-columns: repeat(2,1fr); margin-top: 18px;">
+          <div class="mini-card"><div class="eyebrow">Node Integrity</div><div class="mini-val">96%</div></div>
+          <div class="mini-card"><div class="eyebrow">Looped Cameras</div><div class="mini-val">18</div></div>
+        </div>
+      </section>
     </div>
-  );
-}
+  </div>
 
-function AppShell() {
-  const [active, setActive] = useState("overview");
-  const [selectedOp, setSelectedOp] = useState(operators[0]);
-  const typed = useTypedSequence();
-  const [clock, setClock] = useState(new Date());
-
-  useEffect(() => {
-    const t = setInterval(() => setClock(new Date()), 1000);
-    return () => clearInterval(t);
-  }, []);
-
-  const triggers = useMemo(
-    () => ({
-      kiyomi: typed.includes("kiyomi"),
-      cheshire: typed.includes("cheshire"),
-      hunger: typed.includes("hunger"),
-      mildew: typed.includes("mildew"),
-      sam: typed.includes("sam"),
-    }),
-    [typed]
-  );
-
-  const time = clock.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
-
-  return (
-    <div className="min-h-screen overflow-hidden bg-[#060503] text-[#f4edcc] selection:bg-amber-100/20">
-      <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_top,rgba(255,220,120,0.12),transparent_26%),linear-gradient(to_bottom,rgba(0,0,0,0.1),rgba(0,0,0,0.92)),repeating-linear-gradient(to_bottom,rgba(255,255,255,0.025)_0,rgba(255,255,255,0.025)_1px,transparent_1px,transparent_4px)]" />
-      <div className="pointer-events-none fixed inset-0 opacity-20 [background-image:linear-gradient(rgba(255,230,140,0.08)_1px,transparent_1px),linear-gradient(90deg,rgba(255,230,140,0.08)_1px,transparent_1px)] [background-size:24px_24px]" />
-
-      <div className="relative z-10 grid min-h-screen grid-cols-1 xl:grid-cols-[260px_1fr_390px]">
-        <aside className="border-r border-amber-100/10 bg-black/45 p-5 backdrop-blur-xl">
-          <div className="mb-6 rounded-[24px] border border-amber-100/10 bg-amber-50/5 p-4">
-            <div className="flex items-center gap-3">
-              <div className="rounded-2xl border border-amber-100/10 bg-black/30 p-3">
-                <Radar className="h-5 w-5 text-amber-100" />
-              </div>
-              <div>
-                <div className="text-[10px] uppercase tracking-[0.4em] text-amber-100/55">mission control</div>
-                <div className="mt-1 text-lg tracking-[0.18em] text-amber-50">BLACK CHAMBER</div>
-              </div>
-            </div>
-            <div className="mt-4 rounded-2xl border border-amber-100/10 bg-black/25 p-3 text-[10px] uppercase tracking-[0.28em] text-zinc-500">
-              local time // {time}
-            </div>
+  <div id="app" class="app hidden">
+    <aside class="sidebar">
+      <div class="panel brandbox">
+        <div class="title-row" style="margin-bottom: 0;">
+          <div class="iconbox" style="width:46px;height:46px;font-size:20px;">◉</div>
+          <div>
+            <div class="eyebrow">mission control</div>
+            <div class="section-title" style="font-size: 22px;">BLACK CHAMBER</div>
           </div>
+        </div>
+        <div class="timebox">local time // <span id="clock"></span></div>
+      </div>
 
-          <div className="space-y-2">
-            {nav.map((item) => {
-              const Icon = item.icon;
-              const isActive = item.id === active;
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => setActive(item.id)}
-                  className={`flex w-full items-center gap-3 rounded-2xl border px-4 py-3 text-left transition ${
-                    isActive
-                      ? "border-amber-100/25 bg-gradient-to-r from-yellow-100/12 to-amber-200/6 text-amber-50"
-                      : "border-amber-100/5 bg-black/20 text-zinc-400 hover:border-amber-100/15 hover:text-zinc-200"
-                  }`}
-                >
-                  <Icon className="h-4 w-4" />
-                  <span className="text-xs uppercase tracking-[0.3em]">{item.label}</span>
-                </button>
-              );
-            })}
-          </div>
+      <div class="nav-stack">
+        <button class="nav-btn active" data-tab="overview">CONTROL CORE</button>
+        <button class="nav-btn" data-tab="ops">LIVE OPS</button>
+        <button class="nav-btn" data-tab="roster">OPERATOR GRID</button>
+        <button class="nav-btn" data-tab="surveillance">SURVEILLANCE</button>
+        <button class="nav-btn" data-tab="biometrics">BIOMETRICS</button>
+        <button class="nav-btn" data-tab="routing">SYSTEM ROUTING</button>
+        <button class="nav-btn" data-tab="containment">CONTAINMENT</button>
+      </div>
 
-          <div className="mt-6 rounded-[24px] border border-amber-100/10 bg-black/25 p-4">
-            <div className="mb-3 flex items-center gap-2 text-[10px] uppercase tracking-[0.3em] text-zinc-500">
-              <BellRing className="h-3.5 w-3.5" />
-              rolling alerts
-            </div>
-            <div className="space-y-3 text-xs leading-5 text-zinc-400">
-              {alerts.slice(0, 4).map((a) => (
-                <div key={a} className="rounded-2xl border border-amber-100/8 bg-amber-50/5 p-3">{a}</div>
-              ))}
-            </div>
-          </div>
-        </aside>
+      <div class="panel card" style="margin-top: 20px;">
+        <div class="eyebrow">rolling alerts</div>
+        <div class="stack" id="sidebar-alerts" style="margin-top: 14px;"></div>
+      </div>
+    </aside>
 
-        <main className="border-r border-amber-100/10 bg-black/25 p-5">
-          <div className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-[24px] border border-amber-100/10 bg-black/35 px-5 py-4 backdrop-blur-xl">
+    <main class="main">
+      <div class="panel topbar">
+        <div>
+          <div class="eyebrow">counter-doa special unit command</div>
+          <div class="section-title">CONTROL CENTER / OPERATIONAL VIEW</div>
+        </div>
+        <div class="top-pill">uplink mirrored // secure drift</div>
+      </div>
+
+      <section id="tab-overview" class="tab-section"></section>
+      <section id="tab-ops" class="tab-section hidden"></section>
+      <section id="tab-roster" class="tab-section hidden"></section>
+      <section id="tab-surveillance" class="tab-section hidden"></section>
+      <section id="tab-biometrics" class="tab-section hidden"></section>
+      <section id="tab-routing" class="tab-section hidden"></section>
+      <section id="tab-containment" class="tab-section hidden"></section>
+    </main>
+
+    <aside class="rightbar">
+      <div class="stack">
+        <div class="panel card">
+          <div class="split-head">
             <div>
-              <div className="text-[10px] uppercase tracking-[0.4em] text-zinc-500">counter-doa special unit command</div>
-              <h2 className="mt-2 text-2xl tracking-[0.18em] text-[#fff7d6]">CONTROL CENTER / OPERATIONAL VIEW</h2>
+              <div class="eyebrow">selected unit quicklook</div>
+              <div class="section-title" style="font-size: 20px;" id="quicklook-name">TOMCAT</div>
             </div>
-            <div className="flex items-center gap-2 rounded-2xl border border-amber-100/10 bg-amber-50/5 px-4 py-3 text-xs uppercase tracking-[0.28em] text-amber-50">
-              <Wifi className="h-4 w-4" /> uplink mirrored // secure drift
-            </div>
+            <div class="eyebrow">cpu</div>
           </div>
-
-          {active === "overview" && (
-            <div className="grid gap-5 2xl:grid-cols-[1.15fr_0.85fr]">
-              <div className="space-y-5">
-                <div className="grid gap-4 md:grid-cols-4">
-                  {[
-                    ["live units", "05", Activity],
-                    ["stolen nodes", "18", Orbit],
-                    ["containment flags", "07", AlertTriangle],
-                    ["active loops", "31", ScanLine],
-                  ].map(([label, value, Icon]) => (
-                    <div key={label} className="rounded-[24px] border border-amber-100/10 bg-black/40 p-4">
-                      <div className="flex items-center justify-between text-zinc-500">
-                        <span className="text-[10px] uppercase tracking-[0.28em]">{label}</span>
-                        <Icon className="h-4 w-4 text-amber-100/70" />
-                      </div>
-                      <div className="mt-4 text-3xl text-amber-50">{value}</div>
-                      <div className="mt-3"><SmallLine points={[2, 4, 6, 4, 8, 10, 9, 13]} /></div>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="grid gap-5 xl:grid-cols-[1fr_0.9fr]">
-                  <div className="rounded-[28px] border border-amber-100/10 bg-black/40 p-5">
-                    <div className="mb-4 flex items-center justify-between">
-                      <div>
-                        <div className="text-[10px] uppercase tracking-[0.35em] text-zinc-500">live mission pressure map</div>
-                        <div className="mt-2 text-lg tracking-[0.16em] text-amber-50">THREAT CONVERGENCE</div>
-                      </div>
-                      <Map className="h-5 w-5 text-amber-100/70" />
-                    </div>
-                    <div className="grid gap-5 lg:grid-cols-[320px_1fr]">
-                      <RadarSweep />
-                      <div className="space-y-4">
-                        {liveMissions.map((m) => (
-                          <div key={m.codename} className="rounded-[22px] border border-amber-100/10 bg-amber-50/5 p-4">
-                            <div className="flex items-center justify-between gap-3">
-                              <div>
-                                <div className="text-[10px] uppercase tracking-[0.32em] text-zinc-500">{m.zone}</div>
-                                <div className="mt-2 text-base tracking-[0.16em] text-amber-50">{m.codename}</div>
-                              </div>
-                              <div className="rounded-full border border-amber-100/10 px-3 py-1 text-[10px] uppercase tracking-[0.3em] text-amber-100/80">
-                                {m.state}
-                              </div>
-                            </div>
-                            <p className="mt-3 text-sm leading-6 text-zinc-400">{m.summary}</p>
-                            <div className="mt-4 h-2 overflow-hidden rounded-full border border-amber-100/10 bg-black/40">
-                              <div className="h-full rounded-full bg-gradient-to-r from-yellow-100 via-amber-200 to-orange-200" style={{ width: `${m.progress}%` }} />
-                            </div>
-                            <div className="mt-2 text-right text-[10px] uppercase tracking-[0.28em] text-zinc-500">mission completion {m.progress}%</div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="rounded-[28px] border border-amber-100/10 bg-black/40 p-5">
-                    <div className="mb-4 flex items-center justify-between">
-                      <div>
-                        <div className="text-[10px] uppercase tracking-[0.35em] text-zinc-500">intercept queue</div>
-                        <div className="mt-2 text-lg tracking-[0.16em] text-amber-50">ACTIVE EVENT ROLL</div>
-                      </div>
-                      <Siren className="h-5 w-5 text-amber-100/70" />
-                    </div>
-                    <div className="space-y-3 text-sm">
-                      {alerts.map((item, i) => (
-                        <div key={item} className="flex gap-3 rounded-[20px] border border-amber-100/8 bg-amber-50/5 p-4">
-                          <div className="pt-1 text-[10px] uppercase tracking-[0.28em] text-amber-100/70">0{i + 1}</div>
-                          <div className="leading-6 text-zinc-400">{item}</div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="space-y-5">
-                <div className="rounded-[28px] border border-amber-100/10 bg-black/40 p-5">
-                  <div className="mb-4 flex items-center justify-between">
-                    <div>
-                      <div className="text-[10px] uppercase tracking-[0.35em] text-zinc-500">operator spotlight</div>
-                      <div className="mt-2 text-lg tracking-[0.16em] text-amber-50">{selectedOp.id}</div>
-                    </div>
-                    <div className="rounded-full border border-amber-100/10 px-3 py-1 text-[10px] uppercase tracking-[0.3em] text-amber-100/80">
-                      {selectedOp.flag}
-                    </div>
-                  </div>
-                  <p className="text-sm leading-6 text-zinc-400">{selectedOp.detail}</p>
-                  <div className="mt-5 grid gap-3">
-                    <MetricBar value={selectedOp.sync} label="command sync" />
-                    <MetricBar value={selectedOp.stress} label="stress load" danger />
-                    <MetricBar value={selectedOp.risk} label="loss potential" danger />
-                  </div>
-                </div>
-
-                <div className="rounded-[28px] border border-amber-100/10 bg-black/40 p-5">
-                  <div className="mb-4 flex items-center justify-between">
-                    <div>
-                      <div className="text-[10px] uppercase tracking-[0.35em] text-zinc-500">surveillance digest</div>
-                      <div className="mt-2 text-lg tracking-[0.16em] text-amber-50">WATCH PANELS</div>
-                    </div>
-                    <Eye className="h-5 w-5 text-amber-100/70" />
-                  </div>
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    {surveillanceFeeds.map((feed) => {
-                      const Icon = feed.icon;
-                      return (
-                        <div key={feed.title} className="rounded-[22px] border border-amber-100/10 bg-amber-50/5 p-4">
-                          <div className="flex items-start justify-between gap-3">
-                            <div>
-                              <div className="text-[10px] uppercase tracking-[0.3em] text-zinc-500">{feed.title}</div>
-                              <div className="mt-2 text-xs uppercase tracking-[0.2em] text-amber-100/70">{feed.subtitle}</div>
-                            </div>
-                            <Icon className="h-4 w-4 text-amber-100/70" />
-                          </div>
-                          <div className="mt-4 h-20 rounded-2xl border border-amber-100/8 bg-[linear-gradient(180deg,rgba(255,247,214,0.08),rgba(0,0,0,0.0)),repeating-linear-gradient(to_bottom,rgba(255,255,255,0.03)_0,rgba(255,255,255,0.03)_1px,transparent_1px,transparent_4px)] p-3">
-                            <div className="flex h-full items-end gap-1">
-                              {[18, 44, 31, 62, 38, 71, 55, feed.level].map((h, idx) => (
-                                <div key={idx} className="flex-1 rounded-t-sm bg-gradient-to-t from-amber-200/30 to-yellow-100/80" style={{ height: `${h}%` }} />
-                              ))}
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {active === "ops" && (
-            <div className="grid gap-5 xl:grid-cols-[1.1fr_0.9fr]">
-              <div className="rounded-[28px] border border-amber-100/10 bg-black/40 p-5">
-                <div className="mb-4 flex items-center justify-between">
-                  <div>
-                    <div className="text-[10px] uppercase tracking-[0.35em] text-zinc-500">deployment stack</div>
-                    <div className="mt-2 text-lg tracking-[0.16em] text-amber-50">LIVE OPERATIONS BOARD</div>
-                  </div>
-                  <TimerReset className="h-5 w-5 text-amber-100/70" />
-                </div>
-                <div className="space-y-4">
-                  {liveMissions.map((m, i) => (
-                    <div key={m.codename} className="rounded-[24px] border border-amber-100/10 bg-amber-50/5 p-5">
-                      <div className="flex flex-wrap items-center justify-between gap-3">
-                        <div>
-                          <div className="text-[10px] uppercase tracking-[0.35em] text-zinc-500">operation {String(i + 1).padStart(2, "0")}</div>
-                          <div className="mt-2 text-xl tracking-[0.16em] text-amber-50">{m.codename}</div>
-                        </div>
-                        <div className="rounded-full border border-amber-100/10 px-3 py-1 text-[10px] uppercase tracking-[0.3em] text-amber-100/80">{m.state}</div>
-                      </div>
-                      <div className="mt-3 text-[11px] uppercase tracking-[0.28em] text-zinc-500">zone // {m.zone}</div>
-                      <p className="mt-4 text-sm leading-6 text-zinc-400">{m.summary}</p>
-                      <div className="mt-5 grid gap-3 md:grid-cols-3">
-                        <div className="rounded-2xl border border-amber-100/8 bg-black/25 p-4"><div className="text-[10px] uppercase tracking-[0.28em] text-zinc-500">Insertion</div><div className="mt-2 text-amber-50">Tunnel Vector</div></div>
-                        <div className="rounded-2xl border border-amber-100/8 bg-black/25 p-4"><div className="text-[10px] uppercase tracking-[0.28em] text-zinc-500">Command Style</div><div className="mt-2 text-amber-50">Silent Override</div></div>
-                        <div className="rounded-2xl border border-amber-100/8 bg-black/25 p-4"><div className="text-[10px] uppercase tracking-[0.28em] text-zinc-500">Collateral</div><div className="mt-2 text-amber-50">Accepted</div></div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              <div className="space-y-5">
-                <div className="rounded-[28px] border border-amber-100/10 bg-black/40 p-5">
-                  <div className="text-[10px] uppercase tracking-[0.35em] text-zinc-500">mission strings</div>
-                  <div className="mt-2 text-lg tracking-[0.16em] text-amber-50">COMMAND INTENT</div>
-                  <div className="mt-4 space-y-3 text-sm leading-6 text-zinc-400">
-                    <p className="rounded-2xl border border-amber-100/8 bg-amber-50/5 p-4">This branch exists to cut the DOA's nerves without triggering a visible war. It steals authority first, bodies second, and public trust last.</p>
-                    <p className="rounded-2xl border border-amber-100/8 bg-amber-50/5 p-4">Operators are treated like strategic malfunctions aimed in the correct direction. Success metrics prioritize panic shaping, command confusion, and denial of clean narratives.</p>
-                    <p className="rounded-2xl border border-amber-100/8 bg-amber-50/5 p-4">If a mission looks impossible on paper, it is probably assigned here because the people going in are already impossible in person.</p>
-                  </div>
-                </div>
-                <div className="rounded-[28px] border border-amber-100/10 bg-black/40 p-5">
-                  <div className="text-[10px] uppercase tracking-[0.35em] text-zinc-500">signal saturation</div>
-                  <div className="mt-2 text-lg tracking-[0.16em] text-amber-50">UPLINK NOISE PROFILE</div>
-                  <div className="mt-4 h-52 rounded-[24px] border border-amber-100/8 bg-black/30 p-4">
-                    <div className="flex h-full items-end gap-2">
-                      {[24, 38, 31, 54, 46, 68, 72, 61, 79, 91, 77, 64].map((v, i) => (
-                        <div key={i} className="flex-1 rounded-t-md bg-gradient-to-t from-amber-200/25 via-yellow-100/40 to-yellow-100/85" style={{ height: `${v}%` }} />
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {active === "roster" && (
-            <div className="grid gap-5 xl:grid-cols-[0.8fr_1.2fr]">
-              <div className="rounded-[28px] border border-amber-100/10 bg-black/40 p-5">
-                <div className="mb-4 flex items-center justify-between">
-                  <div>
-                    <div className="text-[10px] uppercase tracking-[0.35em] text-zinc-500">special unit roster</div>
-                    <div className="mt-2 text-lg tracking-[0.16em] text-amber-50">OPERATOR GRID</div>
-                  </div>
-                  <Search className="h-5 w-5 text-amber-100/70" />
-                </div>
-                <div className="space-y-3">
-                  {operators.map((op) => (
-                    <button
-                      key={op.id}
-                      onClick={() => setSelectedOp(op)}
-                      className={`w-full rounded-[22px] border p-4 text-left transition ${
-                        selectedOp.id === op.id
-                          ? "border-amber-100/25 bg-gradient-to-r from-yellow-100/10 to-amber-200/5"
-                          : "border-amber-100/8 bg-amber-50/5 hover:border-amber-100/15"
-                      }`}
-                    >
-                      <div className="flex items-center justify-between gap-3">
-                        <div>
-                          <div className="text-[10px] uppercase tracking-[0.32em] text-zinc-500">{op.kind}</div>
-                          <div className="mt-2 text-base tracking-[0.16em] text-amber-50">{op.id}</div>
-                        </div>
-                        <ChevronRight className="h-4 w-4 text-amber-100/70" />
-                      </div>
-                      <div className="mt-3 text-xs uppercase tracking-[0.2em] text-zinc-400">{op.role}</div>
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <div className="rounded-[28px] border border-amber-100/10 bg-black/40 p-5">
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div>
-                    <div className="text-[10px] uppercase tracking-[0.35em] text-zinc-500">selected operator</div>
-                    <div className="mt-2 text-2xl tracking-[0.18em] text-amber-50">{selectedOp.id}</div>
-                    <div className="mt-2 text-xs uppercase tracking-[0.22em] text-amber-100/75">{selectedOp.role}</div>
-                  </div>
-                  <div className="rounded-full border border-amber-100/10 px-3 py-1 text-[10px] uppercase tracking-[0.3em] text-amber-100/80">
-                    {selectedOp.status}
-                  </div>
-                </div>
-                <div className="mt-5 grid gap-4 md:grid-cols-2">
-                  <div className="rounded-[24px] border border-amber-100/8 bg-amber-50/5 p-4">
-                    <div className="text-[10px] uppercase tracking-[0.3em] text-zinc-500">location</div>
-                    <div className="mt-3 text-sm leading-6 text-zinc-300">{selectedOp.location}</div>
-                  </div>
-                  <div className="rounded-[24px] border border-amber-100/8 bg-amber-50/5 p-4">
-                    <div className="text-[10px] uppercase tracking-[0.3em] text-zinc-500">warning flag</div>
-                    <div className="mt-3 text-sm leading-6 text-zinc-300">{selectedOp.flag}</div>
-                  </div>
-                </div>
-                <div className="mt-5 grid gap-3">
-                  <MetricBar value={selectedOp.sync} label="command sync" />
-                  <MetricBar value={selectedOp.stress} label="stress load" danger />
-                  <MetricBar value={selectedOp.risk} label="engagement risk" danger />
-                </div>
-                <div className="mt-5 grid gap-4 md:grid-cols-2">
-                  <div className="rounded-[24px] border border-amber-100/8 bg-black/25 p-4">
-                    <div className="text-[10px] uppercase tracking-[0.3em] text-zinc-500">clinical note</div>
-                    <p className="mt-3 text-sm leading-6 text-zinc-400">{selectedOp.notes}</p>
-                  </div>
-                  <div className="rounded-[24px] border border-amber-100/8 bg-black/25 p-4">
-                    <div className="text-[10px] uppercase tracking-[0.3em] text-zinc-500">behavioral note</div>
-                    <p className="mt-3 text-sm leading-6 text-zinc-400">{selectedOp.detail}</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {active === "surveillance" && (
-            <div className="grid gap-5 lg:grid-cols-2 2xl:grid-cols-3">
-              {surveillanceFeeds.concat(surveillanceFeeds).map((feed, idx) => {
-                const Icon = feed.icon;
-                return (
-                  <div key={`${feed.title}-${idx}`} className="rounded-[28px] border border-amber-100/10 bg-black/40 p-5">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <div className="text-[10px] uppercase tracking-[0.32em] text-zinc-500">{feed.title}</div>
-                        <div className="mt-2 text-xs uppercase tracking-[0.22em] text-amber-100/70">{feed.subtitle}</div>
-                      </div>
-                      <Icon className="h-5 w-5 text-amber-100/70" />
-                    </div>
-                    <div className="mt-4 h-52 rounded-[24px] border border-amber-100/8 bg-[linear-gradient(180deg,rgba(255,247,214,0.08),rgba(0,0,0,0.0)),repeating-linear-gradient(to_bottom,rgba(255,255,255,0.03)_0,rgba(255,255,255,0.03)_1px,transparent_1px,transparent_4px)] p-4">
-                      <div className="grid h-full grid-cols-8 gap-1">
-                        {Array.from({ length: 48 }).map((_, i) => (
-                          <div key={i} className={`rounded-sm ${i % 7 === 0 ? "bg-amber-100/60" : i % 5 === 0 ? "bg-yellow-100/25" : "bg-white/5"}`} />
-                        ))}
-                      </div>
-                    </div>
-                    <div className="mt-4 flex items-center justify-between text-[10px] uppercase tracking-[0.28em] text-zinc-500">
-                      <span>confidence drift</span>
-                      <span className="text-amber-100/80">{feed.level}%</span>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-
-          {active === "biometrics" && (
-            <div className="grid gap-5 lg:grid-cols-2">
-              {operators.map((op) => (
-                <div key={op.id} className="rounded-[28px] border border-amber-100/10 bg-black/40 p-5">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <div className="text-[10px] uppercase tracking-[0.32em] text-zinc-500">{op.kind}</div>
-                      <div className="mt-2 text-lg tracking-[0.16em] text-amber-50">{op.id}</div>
-                    </div>
-                    <HeartPulse className="h-5 w-5 text-amber-100/70" />
-                  </div>
-                  <div className="mt-5 grid gap-4 md:grid-cols-4">
-                    <div className="rounded-2xl border border-amber-100/8 bg-amber-50/5 p-4"><div className="text-[10px] uppercase tracking-[0.28em] text-zinc-500">pulse</div><div className="mt-2 text-2xl text-amber-50">{op.pulse}</div></div>
-                    <div className="rounded-2xl border border-amber-100/8 bg-amber-50/5 p-4"><div className="text-[10px] uppercase tracking-[0.28em] text-zinc-500">stress</div><div className="mt-2 text-2xl text-amber-50">{op.stress}%</div></div>
-                    <div className="rounded-2xl border border-amber-100/8 bg-amber-50/5 p-4"><div className="text-[10px] uppercase tracking-[0.28em] text-zinc-500">sync</div><div className="mt-2 text-2xl text-amber-50">{op.sync}%</div></div>
-                    <div className="rounded-2xl border border-amber-100/8 bg-amber-50/5 p-4"><div className="text-[10px] uppercase tracking-[0.28em] text-zinc-500">temp</div><div className="mt-2 text-2xl text-amber-50">{op.temp}</div></div>
-                  </div>
-                  <div className="mt-5 rounded-[24px] border border-amber-100/8 bg-black/25 p-4 text-amber-100/90">
-                    <SmallLine points={[op.pulse / 2, op.pulse * 0.7, op.pulse * 0.6, op.pulse * 0.9, op.pulse * 0.8, op.pulse, op.pulse * 0.76, op.pulse * 0.92]} />
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {active === "routing" && (
-            <div className="grid gap-5 xl:grid-cols-[1.15fr_0.85fr]">
-              <div className="rounded-[28px] border border-amber-100/10 bg-black/40 p-5">
-                <div className="text-[10px] uppercase tracking-[0.35em] text-zinc-500">command lattice</div>
-                <div className="mt-2 text-lg tracking-[0.16em] text-amber-50">SYSTEM ROUTING MAP</div>
-                <div className="mt-5 grid gap-4 md:grid-cols-3">
-                  {[
-                    "GHOST RELAY",
-                    "VEIL MIRROR",
-                    "FALSE DISPATCH",
-                    "SUBFLOOR TUNNEL",
-                    "BLACK SWITCH",
-                    "RED CHANNEL",
-                    "NULL CABINET",
-                    "MASKED EXIT",
-                    "CHOIR LOOP",
-                  ].map((node, i) => (
-                    <div key={node} className="relative rounded-[24px] border border-amber-100/10 bg-amber-50/5 p-4">
-                      <div className="text-[10px] uppercase tracking-[0.3em] text-zinc-500">node {String(i + 1).padStart(2, "0")}</div>
-                      <div className="mt-2 text-base tracking-[0.14em] text-amber-50">{node}</div>
-                      <div className="mt-4 h-2 rounded-full bg-black/40">
-                        <div className="h-full rounded-full bg-gradient-to-r from-yellow-100 via-amber-200 to-orange-200" style={{ width: `${50 + ((i * 7) % 43)}%` }} />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              <div className="rounded-[28px] border border-amber-100/10 bg-black/40 p-5">
-                <div className="text-[10px] uppercase tracking-[0.35em] text-zinc-500">doa compromise notes</div>
-                <div className="mt-2 text-lg tracking-[0.16em] text-amber-50">INTERNAL METHOD</div>
-                <div className="mt-4 space-y-3 text-sm leading-6 text-zinc-400">
-                  <div className="rounded-[20px] border border-amber-100/8 bg-amber-50/5 p-4">We do not defeat the DOA head-on. We teach it to misread itself until its own systems open the door for us.</div>
-                  <div className="rounded-[20px] border border-amber-100/8 bg-amber-50/5 p-4">Signal theft is cleaner than open warfare. A city that trusts the wrong siren is softer than concrete.</div>
-                  <div className="rounded-[20px] border border-amber-100/8 bg-amber-50/5 p-4">The perfect strike leaves surviving witnesses convinced the wrong thing happened.</div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {active === "containment" && (
-            <div className="grid gap-5 xl:grid-cols-[0.95fr_1.05fr]">
-              <div className="rounded-[28px] border border-amber-100/10 bg-black/40 p-5">
-                <div className="text-[10px] uppercase tracking-[0.35em] text-zinc-500">unstable compartments</div>
-                <div className="mt-2 text-lg tracking-[0.16em] text-amber-50">CONTAINMENT STATE</div>
-                <div className="mt-5 space-y-4">
-                  {[
-                    ["Tomcat Decon Wing", "Spore bloom beneath floor seams; breathing sound reported after vacancy.", 86],
-                    ["Fish Restraint Kitchen", "Hunger agitation high. Requested access beyond ration protocol.", 94],
-                    ["Burn Channel", "Cinder performing correction drills unsupervised.", 62],
-                    ["Signal Suite", "Veil camera drift causing testimony mismatch.", 71],
-                  ].map(([name, text, level]) => (
-                    <div key={name} className="rounded-[22px] border border-amber-100/10 bg-amber-50/5 p-4">
-                      <div className="flex items-center justify-between gap-3">
-                        <div className="text-base tracking-[0.14em] text-amber-50">{name}</div>
-                        <div className="text-[10px] uppercase tracking-[0.3em] text-amber-100/80">risk {level}%</div>
-                      </div>
-                      <p className="mt-3 text-sm leading-6 text-zinc-400">{text}</p>
-                      <div className="mt-4 h-2 rounded-full bg-black/40"><div className="h-full rounded-full bg-gradient-to-r from-yellow-100 via-amber-200 to-orange-200" style={{ width: `${level}%` }} /></div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              <div className="rounded-[28px] border border-amber-100/10 bg-black/40 p-5">
-                <div className="text-[10px] uppercase tracking-[0.35em] text-zinc-500">response doctrine</div>
-                <div className="mt-2 text-lg tracking-[0.16em] text-amber-50">FAILURE PROCEDURE</div>
-                <div className="mt-5 grid gap-4 md:grid-cols-2">
-                  {[
-                    ["SPREAD EVENT", "Lock vents, falsify cause-of-death traffic, reroute medics, burn maps after copy."],
-                    ["HUNGER BREAK", "Feed or kill fast. There is no useful middle stage once the room turns red."],
-                    ["THERMAL CASCADE", "Do not let Cinder and Tomcat share a hallway without command consent."],
-                    ["PERCEPTION LOSS", "If Veil was in the room, rewrite all confidence reports from scratch."],
-                  ].map(([title, body]) => (
-                    <div key={title} className="rounded-[24px] border border-amber-100/8 bg-amber-50/5 p-4">
-                      <div className="text-sm uppercase tracking-[0.24em] text-amber-50">{title}</div>
-                      <p className="mt-3 text-sm leading-6 text-zinc-400">{body}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
-        </main>
-
-        <aside className="bg-black/45 p-5 backdrop-blur-xl">
-          <div className="space-y-5">
-            <div className="rounded-[28px] border border-amber-100/10 bg-black/35 p-5">
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="text-[10px] uppercase tracking-[0.35em] text-zinc-500">selected unit quicklook</div>
-                  <div className="mt-2 text-lg tracking-[0.16em] text-amber-50">{selectedOp.id}</div>
-                </div>
-                <Cpu className="h-5 w-5 text-amber-100/70" />
-              </div>
-              <div className="mt-4 space-y-3">
-                <div className="rounded-2xl border border-amber-100/8 bg-amber-50/5 p-4 text-sm leading-6 text-zinc-400">{selectedOp.notes}</div>
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <div className="rounded-2xl border border-amber-100/8 bg-black/25 p-4"><div className="text-[10px] uppercase tracking-[0.28em] text-zinc-500">status</div><div className="mt-2 text-amber-50">{selectedOp.status}</div></div>
-                  <div className="rounded-2xl border border-amber-100/8 bg-black/25 p-4"><div className="text-[10px] uppercase tracking-[0.28em] text-zinc-500">risk</div><div className="mt-2 text-amber-50">{selectedOp.risk}%</div></div>
-                </div>
-              </div>
-            </div>
-
-            <div className="rounded-[28px] border border-amber-100/10 bg-black/35 p-5">
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="text-[10px] uppercase tracking-[0.35em] text-zinc-500">system weather</div>
-                  <div className="mt-2 text-lg tracking-[0.16em] text-amber-50">CONTROL PRESSURE</div>
-                </div>
-                <Gauge className="h-5 w-5 text-amber-100/70" />
-              </div>
-              <div className="mt-4 grid gap-3">
-                <MetricBar value={91} label="network strain" danger />
-                <MetricBar value={74} label="panic viability" />
-                <MetricBar value={83} label="misdirection success" />
-              </div>
-            </div>
-
-            <div className="rounded-[28px] border border-amber-100/10 bg-black/35 p-5">
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="text-[10px] uppercase tracking-[0.35em] text-zinc-500">sealed command notes</div>
-                  <div className="mt-2 text-lg tracking-[0.16em] text-amber-50">INTERNAL REMARKS</div>
-                </div>
-                <FlaskConical className="h-5 w-5 text-amber-100/70" />
-              </div>
-              <div className="mt-4 space-y-3 text-sm leading-6 text-zinc-400">
-                <div className="rounded-2xl border border-amber-100/8 bg-amber-50/5 p-4">Tomcat is not to be referred to as a contamination issue within earshot. He becomes angry when reminded.</div>
-                <div className="rounded-2xl border border-amber-100/8 bg-amber-50/5 p-4">Fish needs a target before she needs a speech. People keep trying the speech first.</div>
-                <div className="rounded-2xl border border-amber-100/8 bg-amber-50/5 p-4">What we are building is not a team. It is an argument against ordinary limits.</div>
-              </div>
-            </div>
+          <div class="remark-card" id="quicklook-note" style="margin-top:14px;"></div>
+          <div class="grid-even-2" style="margin-top: 14px;">
+            <div class="mini-card"><div class="eyebrow">status</div><div class="mini-val" id="quicklook-status" style="font-size:22px;">DEPLOYABLE</div></div>
+            <div class="mini-card"><div class="eyebrow">risk</div><div class="mini-val" id="quicklook-risk" style="font-size:22px;">78%</div></div>
           </div>
-        </aside>
+        </div>
+
+        <div class="panel card">
+          <div class="eyebrow">system weather</div>
+          <div class="section-title" style="font-size: 20px;">CONTROL PRESSURE</div>
+          <div class="bar-group">
+            <div><div class="bar-label"><span>network strain</span><span>91%</span></div><div class="bar-track"><div class="bar-fill" style="width:91%"></div></div></div>
+            <div><div class="bar-label"><span>panic viability</span><span>74%</span></div><div class="bar-track"><div class="bar-fill" style="width:74%"></div></div></div>
+            <div><div class="bar-label"><span>misdirection success</span><span>83%</span></div><div class="bar-track"><div class="bar-fill" style="width:83%"></div></div></div>
+          </div>
+        </div>
+
+        <div class="panel card">
+          <div class="eyebrow">sealed command notes</div>
+          <div class="section-title" style="font-size: 20px;">INTERNAL REMARKS</div>
+          <div class="stack" style="margin-top: 14px;">
+            <div class="remark-card">Tomcat is not to be referred to as a contamination issue within earshot. He becomes quieter when insulted. That is worse.</div>
+            <div class="remark-card">Fish needs a target before she needs a speech. People keep trying the speech first.</div>
+            <div class="remark-card">What we are building is not a team. It is an argument against ordinary limits.</div>
+          </div>
+        </div>
       </div>
+    </aside>
+  </div>
 
-      {triggers.kiyomi && (
-        <div className="pointer-events-none fixed inset-0 z-50 flex items-center justify-center bg-black/84 backdrop-blur-sm">
-          <div className="rounded-[28px] border border-amber-100/15 bg-black/80 px-8 py-6 text-center shadow-[0_0_80px_rgba(255,230,130,0.08)]">
-            <div className="text-[10px] uppercase tracking-[0.45em] text-amber-100/55">unsanctioned reality intrusion</div>
-            <div className="mt-4 text-3xl tracking-[0.24em] text-[#fff4c0]">I see you sam &lt;3</div>
-            <div className="mt-3 text-sm tracking-[0.14em] text-zinc-500">source tag // KIYOMI // smiling somewhere off-screen</div>
-          </div>
-        </div>
-      )}
-
-      {triggers.hunger && (
-        <div className="pointer-events-none fixed bottom-6 right-6 z-50 max-w-md rounded-[24px] border border-amber-100/15 bg-black/85 p-5 shadow-[0_0_40px_rgba(255,230,130,0.07)]">
-          <div className="text-[10px] uppercase tracking-[0.38em] text-amber-100/60">hidden behavioral scrape</div>
-          <div className="mt-3 text-lg tracking-[0.16em] text-amber-50">FISH // PRIVATE THREAD</div>
-          <p className="mt-3 text-sm leading-6 text-zinc-400">
-            He smells wrong. Like rain trapped in drywall. Like something that already died and got back up because it was too stubborn to stop. I don't think I want to eat him. I think I want to know if he tastes like ending.
-          </p>
-        </div>
-      )}
-
-      {triggers.mildew && (
-        <div className="pointer-events-none fixed left-6 top-6 z-50 max-w-sm rounded-[24px] border border-amber-100/15 bg-black/85 p-5 shadow-[0_0_40px_rgba(255,230,130,0.07)]">
-          <div className="text-[10px] uppercase tracking-[0.38em] text-amber-100/60">sealed maintenance memo</div>
-          <div className="mt-3 text-lg tracking-[0.16em] text-amber-50">TOMCAT // RESIDUE NOTICE</div>
-          <p className="mt-3 text-sm leading-6 text-zinc-400">
-            Maintenance reported mold growth spelling partial words near decon drain three. Nobody wrote them down for long enough to be certain. The letters looked like they were trying to become a sentence.
-          </p>
-        </div>
-      )}
-
-      {triggers.sam && !triggers.kiyomi && (
-        <div className="pointer-events-none fixed inset-x-0 top-0 z-40 border-b border-amber-100/10 bg-amber-100/5 px-6 py-3 text-center text-[10px] uppercase tracking-[0.38em] text-amber-100/60">
-          watcher acknowledged
-        </div>
-      )}
-
-      {triggers.cheshire && (
-        <div className="pointer-events-none fixed inset-0 z-40 flex items-center justify-center bg-black/70">
-          <div className="text-center">
-            <div className="text-6xl text-amber-100/90">⌒‿⌒</div>
-            <div className="mt-4 text-[10px] uppercase tracking-[0.5em] text-amber-100/55">signal smiling back</div>
-          </div>
-        </div>
-      )}
+  <div id="overlay-kiyomi" class="overlay">
+    <div class="overlay-box">
+      <div class="eyebrow">unsanctioned reality intrusion</div>
+      <div class="overlay-big">I see you sam &lt;3</div>
+      <div class="copy" style="font-size:12px; letter-spacing:0.14em;">source tag // KIYOMI // smiling somewhere off-screen</div>
     </div>
-  );
-}
+  </div>
 
-export default function BlackChamberControlCenter() {
-  const [unlocked, setUnlocked] = useState(false);
-  return unlocked ? <AppShell /> : <LoginScreen onUnlock={() => setUnlocked(true)} />;
-}
+  <div id="toast-hunger" class="toast">
+    <div class="eyebrow">hidden behavioral scrape</div>
+    <div class="section-title" style="font-size: 20px; margin-top: 10px;">FISH // PRIVATE THREAD</div>
+    <p class="copy">He smells wrong. Like rain trapped in drywall. Like something that already died and got back up because it was too stubborn to stop. I don't think I want to eat him. I think I want to know if he tastes like ending.</p>
+  </div>
+
+  <div id="toast-mildew" class="toast">
+    <div class="eyebrow">sealed maintenance memo</div>
+    <div class="section-title" style="font-size: 20px; margin-top: 10px;">TOMCAT // RESIDUE NOTICE</div>
+    <p class="copy">Maintenance reported mold growth spelling partial words near decon drain three. Nobody wrote them down for long enough to be certain. The letters looked like they were trying to become a sentence.</p>
+  </div>
+
+  <div id="top-strip" class="top-strip">watcher acknowledged</div>
+
+  <div id="overlay-smile" class="smile-overlay">
+    <div class="smile-box">
+      <div class="smile-face">⌒‿⌒</div>
+      <div class="smile-note">signal smiling back</div>
+    </div>
+  </div>
+
+  <script>
+    const LOGIN_KEY = "DOA//NULL-ASHEN_7QX::YELLOWJACKET";
+
+    const alerts = [
+      "DOA relay spine breached for 00:02:14 before false telemetry restored.",
+      "Operator FISH hunger-state markers elevated after corridor blood cleanup event.",
+      "Subfloor mold pressure bloom detected beneath TOMCAT decon chamber.",
+      "Three hostile cameras rewritten and looped inside Sector NORO-4.",
+      "Unauthorized phrase-capture event recorded in comms parser: 'who is breathing in the vents'.",
+      "Containment lamps in wing C cycling at irregular intervals. Cause disputed."
+    ];
+
+    const liveMissions = [
+      {
+        codename: "YELLOW CHOIR",
+        zone: "DOA MUNICIPAL SHELL / COLORADO FRONT",
+        progress: 72,
+        state: "UPLINK STOLEN",
+        summary: "Special unit inserted through maintenance artery beneath public records annex. Goal is to seize route-authority credentials and poison DOA emergency dispatch with false positives."
+      },
+      {
+        codename: "HOLLOW GLASS",
+        zone: "RESEARCH WING N-13",
+        progress: 39,
+        state: "CAMERAS LOOPED",
+        summary: "Surveillance rewrite underway. Veil and Cinder are holding corridor confidence collapse while internal biometric locks are mirrored to our stack."
+      },
+      {
+        codename: "CROWN ROT",
+        zone: "SUBTERRANEAN PIPELINE / RED MILE",
+        progress: 88,
+        state: "CONTAINMENT FAILING",
+        summary: "Tomcat residue detected beyond projected route. Possible unplanned spread event or intentional seeding. Command has not decided which answer is worse."
+      }
+    ];
+
+    const surveillanceFeeds = [
+      { title: "CAM 04 // HOLD CORRIDOR", subtitle: "motion persists after subject departure", level: 89 },
+      { title: "CAM 11 // RESTRAINT KITCHEN", subtitle: "subject smiling at empty wall", level: 97 },
+      { title: "CAM 07 // BURN CHANNEL", subtitle: "thermal bloom approaching threshold", level: 71 },
+      { title: "CAM 19 // SIGNAL SUITE", subtitle: "feed differs from eyewitness testimony", level: 63 }
+    ];
+
+    const operators = [
+      {
+        id: "TOMCAT",
+        kind: "BIO-RECURRENT",
+        status: "DEPLOYABLE",
+        location: "SUBLEVEL CORRIDOR GRID / WEST RAIL",
+        role: "BREACH / BIOLOGICAL PERSISTENCE",
+        pulse: 43,
+        stress: 51,
+        sync: 84,
+        risk: 78,
+        temp: "31.8C",
+        notes: "Body architecture no longer behaves as intact human anatomy. Structural failure is replaced by wet fungal reinforcement. Fire remains the only discouraging variable that consistently changes behavior.",
+        detail: "Tomcat's station is always marked occupied even when cameras fail to find him. Corridor spores pulse on heat-map sweeps several seconds after he passes. Internal teams do not agree whether this is residue or distributed awareness.",
+        flag: "MOLD LATTICE ACTIVE"
+      },
+      {
+        id: "FISH",
+        kind: "PREDATORY ADAPTIVE",
+        status: "RESTRICTED",
+        location: "RED KITCHEN HOLD / RESTRAINED ACCESS",
+        role: "CQC / CONSUMPTION-STATE ASSAULT",
+        pulse: 118,
+        stress: 94,
+        sync: 62,
+        risk: 97,
+        temp: "39.4C",
+        notes: "Appetite-linked combat state remains the unit's most reliable advantage and largest liability. Subject mood destabilizes under blood scent, panic audio, and prolonged fasting. Current behavioral thread includes non-assigned fixation on operator TOMCAT.",
+        detail: "Fish speaks cleanly until she doesn't. Once the body decides a room belongs to her, posture lowers, hands open, and all restraint becomes social rather than biological. Her logs mention Tomcat more often than mission data justifies.",
+        flag: "PRIMAL CASCADE RISK"
+      },
+      {
+        id: "CINDER",
+        kind: "THERMAL SANITIZER",
+        status: "ACTIVE",
+        location: "BURN CHANNEL / SOUTH RESPONSE BAY",
+        role: "PURGE / AREA DENIAL",
+        pulse: 74,
+        stress: 40,
+        sync: 89,
+        risk: 61,
+        temp: "37.1C",
+        notes: "Assigned to erase biological spillover, failed host matter, and anything in a corridor still moving after the medic says it shouldn't be.",
+        detail: "Cinder speaks to ignition systems like they are dogs she trained herself. This has not affected performance. It has affected morale.",
+        flag: "IGNITION-READY"
+      },
+      {
+        id: "VEIL",
+        kind: "COGNITIVE INTERFERENCE",
+        status: "ACTIVE",
+        location: "MIRROR STACK / SIGNAL SUITE",
+        role: "COUNTER-INTEL / PERCEPTION DAMAGE",
+        pulse: 58,
+        stress: 26,
+        sync: 92,
+        risk: 68,
+        temp: "36.0C",
+        notes: "Most effective when she is seen briefly and remembered badly. Useful against command systems that trust eyewitness certainty more than logs.",
+        detail: "Operators swear she stands in slightly different places every time the feed refreshes. Review shows she does not. Or the review was altered. Nobody enjoys checking.",
+        flag: "VISUAL DRIFT"
+      },
+      {
+        id: "GAUGE",
+        kind: "PRESSURE FRAME",
+        status: "ACTIVE",
+        location: "LIFT SHAFT 02 / MOBILE COVER",
+        role: "HEAVY ENTRY / DOOR DENIAL",
+        pulse: 67,
+        stress: 47,
+        sync: 86,
+        risk: 49,
+        temp: "36.7C",
+        notes: "Reinforced skeletal housing and hydraulic assist weave enable short-duration impact events that would pulp ordinary soldiers and most architecture.",
+        detail: "Gauge apologizes to walls before going through them. Nobody knows if that makes him more unsettling or less.",
+        flag: "FRAME STABLE"
+      }
+    ];
+
+    let selectedOp = operators[0];
+    let typedBuffer = "";
+
+    const $ = (id) => document.getElementById(id);
+
+    function makeSpark(values) {
+      return `<div class="spark">${values.map(v => `<span style="height:${v}%"></span>`).join("")}</div>`;
+    }
+
+    function makeBar(label, value) {
+      return `<div><div class="bar-label"><span>${label}</span><span>${value}%</span></div><div class="bar-track"><div class="bar-fill" style="width:${value}%"></div></div></div>`;
+    }
+
+    function renderSidebarAlerts() {
+      $("sidebar-alerts").innerHTML = alerts.slice(0, 4).map(a => `<div class="alert-card">${a}</div>`).join("");
+    }
+
+    function renderQuicklook() {
+      $("quicklook-name").textContent = selectedOp.id;
+      $("quicklook-note").textContent = selectedOp.notes;
+      $("quicklook-status").textContent = selectedOp.status;
+      $("quicklook-risk").textContent = selectedOp.risk + "%";
+    }
+
+    function renderOverview() {
+      $("tab-overview").innerHTML = `
+        <div class="grid-2">
+          <div class="stack">
+            <div class="metric-grid-4">
+              ${[
+                ["live units", "05", [20,32,44,36,60,72,66,82]],
+                ["stolen nodes", "18", [10,16,24,18,38,52,66,74]],
+                ["containment flags", "07", [22,30,28,40,48,62,54,70]],
+                ["active loops", "31", [12,22,34,29,47,55,63,78]],
+              ].map(([label, value, spark]) => `
+                <div class="mini-card">
+                  <div class="eyebrow">${label}</div>
+                  <div class="mini-val">${value}</div>
+                  ${makeSpark(spark)}
+                </div>
+              `).join("")}
+            </div>
+
+            <div class="grid-2">
+              <div class="panel card">
+                <div class="split-head">
+                  <div>
+                    <div class="eyebrow">live mission pressure map</div>
+                    <div class="section-title" style="font-size:20px;">THREAT CONVERGENCE</div>
+                  </div>
+                  <div class="eyebrow">map</div>
+                </div>
+                <div class="radar-wrap" style="margin-top: 16px;">
+                  <div class="radar">
+                    <div class="ring r1"></div><div class="ring r2"></div><div class="ring r3"></div>
+                    <div class="cross-v"></div><div class="cross-h"></div><div class="sweep"></div>
+                    <div class="blip b1"></div><div class="blip b2"></div><div class="blip b3"></div>
+                    <div class="radar-label">threat convergence</div>
+                  </div>
+                  <div class="stack">
+                    ${liveMissions.map(m => `
+                      <div class="mission-card">
+                        <div class="mission-head">
+                          <div>
+                            <div class="eyebrow">${m.zone}</div>
+                            <div class="section-title" style="font-size:18px; margin-top:10px;">${m.codename}</div>
+                          </div>
+                          <div class="tag">${m.state}</div>
+                        </div>
+                        <p class="copy">${m.summary}</p>
+                        <div class="progress"><span style="width:${m.progress}%"></span></div>
+                        <div class="progress-note">mission completion ${m.progress}%</div>
+                      </div>
+                    `).join("")}
+                  </div>
+                </div>
+              </div>
+
+              <div class="panel card">
+                <div class="split-head">
+                  <div>
+                    <div class="eyebrow">intercept queue</div>
+                    <div class="section-title" style="font-size:20px;">ACTIVE EVENT ROLL</div>
+                  </div>
+                  <div class="eyebrow">siren</div>
+                </div>
+                <div class="stack" style="margin-top: 16px;">
+                  ${alerts.map((item, i) => `<div class="alert-card"><span class="boot-num">0${i+1}</span><div class="copy" style="margin-top:8px;">${item}</div></div>`).join("")}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="stack">
+            <div class="panel card">
+              <div class="split-head">
+                <div>
+                  <div class="eyebrow">operator spotlight</div>
+                  <div class="section-title" style="font-size:20px;">${selectedOp.id}</div>
+                </div>
+                <div class="tag">${selectedOp.flag}</div>
+              </div>
+              <p class="copy">${selectedOp.detail}</p>
+              <div class="bar-group">
+                ${makeBar("command sync", selectedOp.sync)}
+                ${makeBar("stress load", selectedOp.stress)}
+                ${makeBar("loss potential", selectedOp.risk)}
+              </div>
+            </div>
+
+            <div class="panel card">
+              <div class="split-head">
+                <div>
+                  <div class="eyebrow">surveillance digest</div>
+                  <div class="section-title" style="font-size:20px;">WATCH PANELS</div>
+                </div>
+                <div class="eyebrow">eye</div>
+              </div>
+              <div class="cam-grid" style="margin-top: 16px;">
+                ${surveillanceFeeds.map(feed => `
+                  <div class="feed-card">
+                    <div class="eyebrow">${feed.title}</div>
+                    <div class="copy" style="margin-top:10px; text-transform:uppercase; letter-spacing:0.14em; color: rgba(255,244,192,0.72);">${feed.subtitle}</div>
+                    <div class="feed-graph">
+                      ${[18,44,31,62,38,71,55,feed.level].map(h => `<span style="height:${h}%"></span>`).join("")}
+                    </div>
+                  </div>
+                `).join("")}
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderOps() {
+      $("tab-ops").innerHTML = `
+        <div class="grid-ops">
+          <div class="panel card">
+            <div class="eyebrow">deployment stack</div>
+            <div class="section-title" style="font-size:20px;">LIVE OPERATIONS BOARD</div>
+            <div class="stack" style="margin-top: 16px;">
+              ${liveMissions.map((m, i) => `
+                <div class="mission-card">
+                  <div class="mission-head">
+                    <div>
+                      <div class="eyebrow">operation ${String(i+1).padStart(2, "0")}</div>
+                      <div class="section-title" style="font-size:21px; margin-top:10px;">${m.codename}</div>
+                    </div>
+                    <div class="tag">${m.state}</div>
+                  </div>
+                  <div class="copy" style="font-size:11px; text-transform:uppercase; letter-spacing:0.16em; color: var(--muted);">zone // ${m.zone}</div>
+                  <p class="copy">${m.summary}</p>
+                  <div class="ops-mini-grid">
+                    <div class="mini-card"><div class="eyebrow">Insertion</div><div class="mini-val" style="font-size:20px;">Tunnel Vector</div></div>
+                    <div class="mini-card"><div class="eyebrow">Command Style</div><div class="mini-val" style="font-size:20px;">Silent Override</div></div>
+                    <div class="mini-card"><div class="eyebrow">Collateral</div><div class="mini-val" style="font-size:20px;">Accepted</div></div>
+                  </div>
+                </div>
+              `).join("")}
+            </div>
+          </div>
+          <div class="stack">
+            <div class="panel card">
+              <div class="eyebrow">mission strings</div>
+              <div class="section-title" style="font-size:20px;">COMMAND INTENT</div>
+              <div class="stack" style="margin-top: 14px;">
+                <div class="remark-card">This branch exists to cut the DOA's nerves without triggering a visible war. It steals authority first, bodies second, and public trust last.</div>
+                <div class="remark-card">Operators are treated like strategic malfunctions aimed in the correct direction. Success metrics prioritize panic shaping, command confusion, and denial of clean narratives.</div>
+                <div class="remark-card">If a mission looks impossible on paper, it is probably assigned here because the people going in are already impossible in person.</div>
+              </div>
+            </div>
+            <div class="panel card">
+              <div class="eyebrow">signal saturation</div>
+              <div class="section-title" style="font-size:20px;">UPLINK NOISE PROFILE</div>
+              <div class="feed-graph" style="height: 220px; margin-top: 16px;">
+                ${[24,38,31,54,46,68,72,61,79,91,77,64].map(h => `<span style="height:${h}%"></span>`).join("")}
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderRoster() {
+      $("tab-roster").innerHTML = `
+        <div class="grid-roster">
+          <div class="panel card">
+            <div class="eyebrow">special unit roster</div>
+            <div class="section-title" style="font-size:20px;">OPERATOR GRID</div>
+            <div class="stack" style="margin-top: 16px;">
+              ${operators.map(op => `
+                <button class="op-btn ${selectedOp.id === op.id ? 'active' : ''}" data-op="${op.id}">
+                  <div class="mission-head">
+                    <div>
+                      <div class="eyebrow">${op.kind}</div>
+                      <div class="section-title" style="font-size:18px; margin-top:10px;">${op.id}</div>
+                    </div>
+                    <div class="eyebrow">&gt;</div>
+                  </div>
+                  <div class="copy" style="text-transform:uppercase; letter-spacing:0.14em;">${op.role}</div>
+                </button>
+              `).join("")}
+            </div>
+          </div>
+          <div class="panel card">
+            <div class="mission-head">
+              <div>
+                <div class="eyebrow">selected operator</div>
+                <div class="section-title" style="font-size:28px;">${selectedOp.id}</div>
+                <div class="copy" style="text-transform:uppercase; letter-spacing:0.14em; color: rgba(255,244,192,0.72);">${selectedOp.role}</div>
+              </div>
+              <div class="tag">${selectedOp.status}</div>
+            </div>
+            <div class="grid-even-2" style="margin-top: 16px;">
+              <div class="operator-detail"><div class="eyebrow">location</div><div class="copy">${selectedOp.location}</div></div>
+              <div class="operator-detail"><div class="eyebrow">warning flag</div><div class="copy">${selectedOp.flag}</div></div>
+            </div>
+            <div class="bar-group">
+              ${makeBar("command sync", selectedOp.sync)}
+              ${makeBar("stress load", selectedOp.stress)}
+              ${makeBar("engagement risk", selectedOp.risk)}
+            </div>
+            <div class="grid-even-2" style="margin-top: 16px;">
+              <div class="operator-detail"><div class="eyebrow">clinical note</div><div class="copy">${selectedOp.notes}</div></div>
+              <div class="operator-detail"><div class="eyebrow">behavioral note</div><div class="copy">${selectedOp.detail}</div></div>
+            </div>
+          </div>
+        </div>
+      `;
+
+      document.querySelectorAll('[data-op]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          selectedOp = operators.find(op => op.id === btn.dataset.op) || operators[0];
+          renderQuicklook();
+          renderOverview();
+          renderRoster();
+        });
+      });
+    }
+
+    function renderSurveillance() {
+      const feeds = surveillanceFeeds.concat(surveillanceFeeds);
+      $("tab-surveillance").innerHTML = `
+        <div class="surv-grid">
+          ${feeds.map(feed => `
+            <div class="panel card">
+              <div class="eyebrow">${feed.title}</div>
+              <div class="copy" style="margin-top:10px; text-transform:uppercase; letter-spacing:0.14em; color: rgba(255,244,192,0.72);">${feed.subtitle}</div>
+              <div class="screen-box">
+                <div class="screen-grid">${Array.from({length: 48}, () => '<span></span>').join('')}</div>
+              </div>
+              <div class="bar-label" style="margin-top: 12px;"><span>confidence drift</span><span>${feed.level}%</span></div>
+            </div>
+          `).join("")}
+        </div>
+      `;
+    }
+
+    function renderBiometrics() {
+      $("tab-biometrics").innerHTML = `
+        <div class="grid-even-2">
+          ${operators.map(op => `
+            <div class="panel card">
+              <div class="mission-head">
+                <div>
+                  <div class="eyebrow">${op.kind}</div>
+                  <div class="section-title" style="font-size:20px; margin-top:10px;">${op.id}</div>
+                </div>
+                <div class="eyebrow">bio</div>
+              </div>
+              <div class="bio-mini-grid" style="margin-top: 16px;">
+                <div class="mini-card"><div class="eyebrow">pulse</div><div class="mini-val" style="font-size:22px;">${op.pulse}</div></div>
+                <div class="mini-card"><div class="eyebrow">stress</div><div class="mini-val" style="font-size:22px;">${op.stress}%</div></div>
+                <div class="mini-card"><div class="eyebrow">sync</div><div class="mini-val" style="font-size:22px;">${op.sync}%</div></div>
+                <div class="mini-card"><div class="eyebrow">temp</div><div class="mini-val" style="font-size:22px;">${op.temp}</div></div>
+              </div>
+              ${makeSpark([op.pulse/2, op.pulse*0.7, op.pulse*0.6, op.pulse*0.9, op.pulse*0.8, op.pulse, op.pulse*0.76, op.pulse*0.92].map(v => Math.max(10, Math.min(100, v))))}
+            </div>
+          `).join("")}
+        </div>
+      `;
+    }
+
+    function renderRouting() {
+      const nodes = ["GHOST RELAY","VEIL MIRROR","FALSE DISPATCH","SUBFLOOR TUNNEL","BLACK SWITCH","RED CHANNEL","NULL CABINET","MASKED EXIT","CHOIR LOOP"];
+      $("tab-routing").innerHTML = `
+        <div class="grid-ops">
+          <div class="panel card">
+            <div class="eyebrow">command lattice</div>
+            <div class="section-title" style="font-size:20px;">SYSTEM ROUTING MAP</div>
+            <div class="route-grid">
+              ${nodes.map((node, i) => `
+                <div class="node-card">
+                  <div class="eyebrow">node ${String(i+1).padStart(2, '0')}</div>
+                  <div class="section-title" style="font-size:18px; margin-top:10px;">${node}</div>
+                  <div class="progress"><span style="width:${50 + ((i * 7) % 43)}%"></span></div>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+          <div class="panel card">
+            <div class="eyebrow">doa compromise notes</div>
+            <div class="section-title" style="font-size:20px;">INTERNAL METHOD</div>
+            <div class="stack" style="margin-top: 14px;">
+              <div class="remark-card">We do not defeat the DOA head-on. We teach it to misread itself until its own systems open the door for us.</div>
+              <div class="remark-card">Signal theft is cleaner than open warfare. A city that trusts the wrong siren is softer than concrete.</div>
+              <div class="remark-card">The perfect strike leaves surviving witnesses convinced the wrong thing happened.</div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderContainment() {
+      const items = [
+        ["Tomcat Decon Wing", "Spore bloom beneath floor seams; breathing sound reported after vacancy.", 86],
+        ["Fish Restraint Kitchen", "Hunger agitation high. Requested access beyond ration protocol.", 94],
+        ["Burn Channel", "Cinder performing correction drills unsupervised.", 62],
+        ["Signal Suite", "Veil camera drift causing testimony mismatch.", 71]
+      ];
+      const doctrine = [
+        ["SPREAD EVENT", "Lock vents, falsify cause-of-death traffic, reroute medics, burn maps after copy."],
+        ["HUNGER BREAK", "Feed or kill fast. There is no useful middle stage once the room turns red."],
+        ["THERMAL CASCADE", "Do not let Cinder and Tomcat share a hallway without command consent."],
+        ["PERCEPTION LOSS", "If Veil was in the room, rewrite all confidence reports from scratch."]
+      ];
+      $("tab-containment").innerHTML = `
+        <div class="grid-roster">
+          <div class="panel card">
+            <div class="eyebrow">unstable compartments</div>
+            <div class="section-title" style="font-size:20px;">CONTAINMENT STATE</div>
+            <div class="stack" style="margin-top: 16px;">
+              ${items.map(([name, text, level]) => `
+                <div class="contain-card">
+                  <div class="mission-head">
+                    <div class="section-title" style="font-size:18px;">${name}</div>
+                    <div class="eyebrow" style="color: rgba(255,244,192,0.78);">risk ${level}%</div>
+                  </div>
+                  <p class="copy">${text}</p>
+                  <div class="progress"><span style="width:${level}%"></span></div>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+          <div class="panel card">
+            <div class="eyebrow">response doctrine</div>
+            <div class="section-title" style="font-size:20px;">FAILURE PROCEDURE</div>
+            <div class="grid-even-2" style="margin-top: 16px;">
+              ${doctrine.map(([title, body]) => `
+                <div class="remark-card">
+                  <div class="section-title" style="font-size:16px;">${title}</div>
+                  <p class="copy">${body}</p>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderAll() {
+      renderSidebarAlerts();
+      renderQuicklook();
+      renderOverview();
+      renderOps();
+      renderRoster();
+      renderSurveillance();
+      renderBiometrics();
+      renderRouting();
+      renderContainment();
+    }
+
+    function showTab(tab) {
+      document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.tab === tab));
+      document.querySelectorAll('.tab-section').forEach(sec => sec.classList.add('hidden'));
+      $("tab-" + tab).classList.remove('hidden');
+    }
+
+    function updateClock() {
+      $("clock").textContent = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    }
+
+    function handleTriggers() {
+      $("overlay-kiyomi").classList.toggle('show', typedBuffer.includes('kiyomi'));
+      $("toast-hunger").classList.toggle('show', typedBuffer.includes('hunger'));
+      $("toast-mildew").classList.toggle('show', typedBuffer.includes('mildew'));
+      $("top-strip").classList.toggle('show', typedBuffer.includes('sam') && !typedBuffer.includes('kiyomi'));
+      $("overlay-smile").classList.toggle('show', typedBuffer.includes('cheshire'));
+    }
+
+    $("unlock-btn").addEventListener('click', tryUnlock);
+    $("login-input").addEventListener('keydown', (e) => { if (e.key === 'Enter') tryUnlock(); });
+
+    function tryUnlock() {
+      const value = $("login-input").value;
+      if (value === LOGIN_KEY) {
+        $("login-screen").classList.add('hidden');
+        $("app").classList.remove('hidden');
+      } else {
+        $("login-fail").classList.remove('hidden');
+        $("login-input").value = '';
+      }
+    }
+
+    document.querySelectorAll('.nav-btn').forEach(btn => {
+      btn.addEventListener('click', () => showTab(btn.dataset.tab));
+    });
+
+    window.addEventListener('keydown', (e) => {
+      if (e.key.length !== 1) return;
+      typedBuffer = (typedBuffer + e.key.toLowerCase()).slice(-24);
+      handleTriggers();
+    });
+
+    renderAll();
+    showTab('overview');
+    updateClock();
+    setInterval(updateClock, 1000);
+  </script>
+</body>
+</html>
