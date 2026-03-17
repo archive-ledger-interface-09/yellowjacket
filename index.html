@@ -1,0 +1,981 @@
+import React, { useEffect, useMemo, useState } from "react";
+import {
+  AlertTriangle,
+  Activity,
+  Lock,
+  Shield,
+  Radar,
+  Binary,
+  Siren,
+  Eye,
+  Users,
+  FlaskConical,
+  ScanLine,
+  Cpu,
+  ChevronRight,
+  Search,
+  TerminalSquare,
+  Wifi,
+  Crosshair,
+  TimerReset,
+  HeartPulse,
+  Map,
+  BellRing,
+  Orbit,
+  Waves,
+  Gauge,
+  Flame,
+  Skull,
+  Footprints,
+} from "lucide-react";
+
+const LOGIN_KEY = "DOA//NULL-ASHEN_7QX::YELLOWJACKET";
+
+const nav = [
+  { id: "overview", label: "CONTROL CORE", icon: Radar },
+  { id: "ops", label: "LIVE OPS", icon: Crosshair },
+  { id: "roster", label: "OPERATOR GRID", icon: Users },
+  { id: "surveillance", label: "SURVEILLANCE", icon: Eye },
+  { id: "biometrics", label: "BIOMETRICS", icon: HeartPulse },
+  { id: "routing", label: "SYSTEM ROUTING", icon: Binary },
+  { id: "containment", label: "CONTAINMENT", icon: Shield },
+];
+
+const alerts = [
+  "DOA relay spine breached for 00:02:14 before false telemetry restored.",
+  "Operator FISH hunger-state markers elevated after corridor blood cleanup event.",
+  "Subfloor mold pressure bloom detected beneath TOMCAT decon chamber.",
+  "Three hostile cameras rewritten and looped inside Sector NORO-4.",
+  "Unauthorized phrase-capture event recorded in comms parser: 'who is breathing in the vents'.",
+  "Containment lamps in wing C cycling at irregular intervals. Cause disputed.",
+];
+
+const operators = [
+  {
+    id: "TOMCAT",
+    kind: "BIO-RECURRENT",
+    status: "DEPLOYABLE",
+    location: "SUBLEVEL CORRIDOR GRID / WEST RAIL",
+    role: "BREACH / BIOLOGICAL PERSISTENCE",
+    pulse: 43,
+    stress: 51,
+    sync: 84,
+    risk: 78,
+    temp: "31.8C",
+    notes:
+      "Body architecture no longer behaves as intact human anatomy. Structural failure is replaced by wet fungal reinforcement. Fire remains the only discouraging variable that consistently changes behavior.",
+    detail:
+      "Tomcat's station is always marked occupied even when cameras fail to find him. Corridor spores pulse on heat-map sweeps several seconds after he passes. Internal teams do not agree whether this is residue or distributed awareness.",
+    flag: "MOLD LATTICE ACTIVE",
+    accent: "amber",
+  },
+  {
+    id: "FISH",
+    kind: "PREDATORY ADAPTIVE",
+    status: "RESTRICTED",
+    location: "RED KITCHEN HOLD / RESTRAINED ACCESS",
+    role: "CQC / CONSUMPTION-STATE ASSAULT",
+    pulse: 118,
+    stress: 94,
+    sync: 62,
+    risk: 97,
+    temp: "39.4C",
+    notes:
+      "Appetite-linked combat state remains the unit's most reliable advantage and largest liability. Subject mood destabilizes under blood scent, panic audio, and prolonged fasting. Current behavioral thread includes non-assigned fixation on operator TOMCAT.",
+    detail:
+      "Fish speaks cleanly until she doesn't. Once the body decides a room belongs to her, posture lowers, hands open, and all restraint becomes social rather than biological. Her logs mention Tomcat more often than mission data justifies.",
+    flag: "PRIMAL CASCADE RISK",
+    accent: "yellow",
+  },
+  {
+    id: "CINDER",
+    kind: "THERMAL SANITIZER",
+    status: "ACTIVE",
+    location: "BURN CHANNEL / SOUTH RESPONSE BAY",
+    role: "PURGE / AREA DENIAL",
+    pulse: 74,
+    stress: 40,
+    sync: 89,
+    risk: 61,
+    temp: "37.1C",
+    notes:
+      "Assigned to erase biological spillover, failed host matter, and anything in a corridor still moving after the medic says it shouldn't be.",
+    detail:
+      "Cinder speaks to ignition systems like they are dogs she trained herself. This has not affected performance. It has affected morale.",
+    flag: "IGNITION-READY",
+    accent: "orange",
+  },
+  {
+    id: "VEIL",
+    kind: "COGNITIVE INTERFERENCE",
+    status: "ACTIVE",
+    location: "MIRROR STACK / SIGNAL SUITE",
+    role: "COUNTER-INTEL / PERCEPTION DAMAGE",
+    pulse: 58,
+    stress: 26,
+    sync: 92,
+    risk: 68,
+    temp: "36.0C",
+    notes:
+      "Most effective when she is seen briefly and remembered badly. Useful against command systems that trust eyewitness certainty more than logs.",
+    detail:
+      "Operators swear she stands in slightly different places every time the feed refreshes. Review shows she does not. Or the review was altered. Nobody enjoys checking.",
+    flag: "VISUAL DRIFT",
+    accent: "stone",
+  },
+  {
+    id: "GAUGE",
+    kind: "PRESSURE FRAME",
+    status: "ACTIVE",
+    location: "LIFT SHAFT 02 / MOBILE COVER",
+    role: "HEAVY ENTRY / DOOR DENIAL",
+    pulse: 67,
+    stress: 47,
+    sync: 86,
+    risk: 49,
+    temp: "36.7C",
+    notes:
+      "Reinforced skeletal housing and hydraulic assist weave enable short-duration impact events that would pulp ordinary soldiers and most architecture.",
+    detail:
+      "Gauge apologizes to walls before going through them. Nobody knows if that makes him more unsettling or less.",
+    flag: "FRAME STABLE",
+    accent: "amber",
+  },
+];
+
+const liveMissions = [
+  {
+    codename: "YELLOW CHOIR",
+    zone: "DOA MUNICIPAL SHELL / COLORADO FRONT",
+    progress: 72,
+    state: "UPLINK STOLEN",
+    summary:
+      "Special unit inserted through maintenance artery beneath public records annex. Goal is to seize route-authority credentials and poison DOA emergency dispatch with false positives.",
+  },
+  {
+    codename: "HOLLOW GLASS",
+    zone: "RESEARCH WING N-13",
+    progress: 39,
+    state: "CAMERAS LOOPED",
+    summary:
+      "Surveillance rewrite underway. Veil and Cinder are holding corridor confidence collapse while internal biometric locks are mirrored to our stack.",
+  },
+  {
+    codename: "CROWN ROT",
+    zone: "SUBTERRANEAN PIPELINE / RED MILE",
+    progress: 88,
+    state: "CONTAINMENT FAILING",
+    summary:
+      "Tomcat residue detected beyond projected route. Possible unplanned spread event or intentional seeding. Command has not decided which answer is worse.",
+  },
+];
+
+const surveillanceFeeds = [
+  {
+    title: "CAM 04 // HOLD CORRIDOR",
+    subtitle: "motion persists after subject departure",
+    level: 89,
+    icon: Footprints,
+  },
+  {
+    title: "CAM 11 // RESTRAINT KITCHEN",
+    subtitle: "subject smiling at empty wall",
+    level: 97,
+    icon: Skull,
+  },
+  {
+    title: "CAM 07 // BURN CHANNEL",
+    subtitle: "thermal bloom approaching threshold",
+    level: 71,
+    icon: Flame,
+  },
+  {
+    title: "CAM 19 // SIGNAL SUITE",
+    subtitle: "feed differs from eyewitness testimony",
+    level: 63,
+    icon: Waves,
+  },
+];
+
+function useTypedSequence() {
+  const [buffer, setBuffer] = useState("");
+
+  useEffect(() => {
+    const handler = (e) => {
+      if (e.key.length !== 1) return;
+      setBuffer((prev) => (prev + e.key.toLowerCase()).slice(-24));
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, []);
+
+  return buffer;
+}
+
+function MetricBar({ value, label, danger = false }) {
+  return (
+    <div className="space-y-1">
+      <div className="flex items-center justify-between text-[10px] uppercase tracking-[0.3em] text-zinc-400">
+        <span>{label}</span>
+        <span className={danger ? "text-amber-200" : "text-zinc-200"}>{value}%</span>
+      </div>
+      <div className="h-2 overflow-hidden rounded-full border border-amber-200/10 bg-black/40">
+        <div
+          className={`h-full rounded-full ${danger ? "bg-gradient-to-r from-yellow-200 via-amber-300 to-orange-300" : "bg-gradient-to-r from-zinc-200 via-amber-200 to-yellow-200"}`}
+          style={{ width: `${value}%` }}
+        />
+      </div>
+    </div>
+  );
+}
+
+function SmallLine({ points = [] }) {
+  const max = Math.max(...points, 1);
+  const step = 100 / Math.max(points.length - 1, 1);
+  const d = points
+    .map((p, i) => `${i === 0 ? "M" : "L"}${i * step},${34 - (p / max) * 28}`)
+    .join(" ");
+  return (
+    <svg viewBox="0 0 100 34" className="h-12 w-full">
+      <path d={d} fill="none" stroke="currentColor" strokeWidth="1.5" className="text-amber-100/90" />
+    </svg>
+  );
+}
+
+function RadarSweep() {
+  return (
+    <div className="relative aspect-square w-full overflow-hidden rounded-full border border-amber-100/20 bg-[radial-gradient(circle_at_center,rgba(255,248,200,0.10),rgba(0,0,0,0.88)_64%)]">
+      <div className="absolute inset-5 rounded-full border border-amber-100/10" />
+      <div className="absolute inset-10 rounded-full border border-amber-100/10" />
+      <div className="absolute inset-[30%] rounded-full border border-amber-100/10" />
+      <div className="absolute left-1/2 top-0 h-full w-px -translate-x-1/2 bg-amber-100/10" />
+      <div className="absolute left-0 top-1/2 h-px w-full -translate-y-1/2 bg-amber-100/10" />
+      <div className="absolute inset-0 animate-[spin_6s_linear_infinite] bg-[conic-gradient(from_0deg,rgba(255,240,170,0.38),rgba(255,240,170,0.00)_20%,rgba(255,240,170,0.00)_100%)]" />
+      <span className="absolute left-[62%] top-[28%] h-2 w-2 rounded-full bg-amber-100 shadow-[0_0_16px_rgba(255,248,180,0.9)]" />
+      <span className="absolute left-[37%] top-[61%] h-2 w-2 rounded-full bg-yellow-200 shadow-[0_0_16px_rgba(255,248,180,0.9)]" />
+      <span className="absolute left-[72%] top-[55%] h-1.5 w-1.5 rounded-full bg-orange-200 shadow-[0_0_16px_rgba(255,248,180,0.9)]" />
+      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-[10px] uppercase tracking-[0.35em] text-amber-100/70">
+        threat convergence
+      </div>
+    </div>
+  );
+}
+
+function LoginScreen({ onUnlock }) {
+  const [value, setValue] = useState("");
+  const [fail, setFail] = useState(false);
+  const bootLines = [
+    "AUTHORITY CHAIN // NULL GOVERNANCE CELL",
+    "MISSION CONTROL INSTANCE // BLACK CHAMBER",
+    "WARNING // UNIFIED OVERSIGHT DENIES THIS NODE EXISTS",
+    "ROUTING // COUNTER-DOA COMMAND STACK",
+  ];
+
+  return (
+    <div className="relative min-h-screen overflow-hidden bg-[#090805] text-[#f5eecb]">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(252,211,77,0.12),transparent_38%),linear-gradient(to_bottom,rgba(0,0,0,0.08),rgba(0,0,0,0.85)),repeating-linear-gradient(to_bottom,rgba(255,255,255,0.03)_0,rgba(255,255,255,0.03)_1px,transparent_1px,transparent_3px)]" />
+      <div className="absolute inset-0 opacity-20 [background-image:linear-gradient(rgba(255,230,140,0.08)_1px,transparent_1px),linear-gradient(90deg,rgba(255,230,140,0.08)_1px,transparent_1px)] [background-size:28px_28px]" />
+      <div className="relative z-10 mx-auto flex min-h-screen max-w-7xl flex-col justify-center px-6 py-10">
+        <div className="grid gap-6 lg:grid-cols-[1.25fr_0.9fr]">
+          <div className="rounded-[28px] border border-amber-100/10 bg-black/45 p-8 shadow-[0_0_80px_rgba(255,208,88,0.08)] backdrop-blur-xl">
+            <div className="mb-8 flex items-center gap-3">
+              <div className="rounded-2xl border border-amber-100/10 bg-amber-50/5 p-3">
+                <Shield className="h-7 w-7 text-amber-100" />
+              </div>
+              <div>
+                <div className="text-xs uppercase tracking-[0.45em] text-amber-100/60">counter-doa authority</div>
+                <h1 className="mt-2 text-4xl font-semibold tracking-[0.2em] text-[#fff7d6]">BLACK CHAMBER CONTROL</h1>
+              </div>
+            </div>
+
+            <div className="grid gap-3 text-sm text-zinc-300">
+              {bootLines.map((line, i) => (
+                <div key={line} className="flex items-center gap-3 rounded-2xl border border-amber-100/10 bg-amber-50/5 px-4 py-3">
+                  <span className="text-[10px] uppercase tracking-[0.35em] text-amber-100/50">0{i + 1}</span>
+                  <span className="tracking-[0.14em]">{line}</span>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-8 grid gap-4 md:grid-cols-3">
+              <div className="rounded-2xl border border-amber-100/10 bg-black/30 p-4">
+                <div className="text-[10px] uppercase tracking-[0.3em] text-zinc-500">system posture</div>
+                <div className="mt-3 text-2xl text-amber-50">armed</div>
+                <SmallLine points={[4, 8, 7, 12, 10, 16, 11, 18]} />
+              </div>
+              <div className="rounded-2xl border border-amber-100/10 bg-black/30 p-4">
+                <div className="text-[10px] uppercase tracking-[0.3em] text-zinc-500">uplink theft</div>
+                <div className="mt-3 text-2xl text-amber-50">3 nodes</div>
+                <SmallLine points={[1, 2, 4, 3, 7, 10, 13, 18]} />
+              </div>
+              <div className="rounded-2xl border border-amber-100/10 bg-black/30 p-4">
+                <div className="text-[10px] uppercase tracking-[0.3em] text-zinc-500">active units</div>
+                <div className="mt-3 text-2xl text-amber-50">05 online</div>
+                <SmallLine points={[13, 12, 14, 14, 13, 15, 15, 14]} />
+              </div>
+            </div>
+          </div>
+
+          <div className="rounded-[28px] border border-amber-100/10 bg-black/55 p-8 shadow-[0_0_80px_rgba(255,208,88,0.07)] backdrop-blur-xl">
+            <div className="mb-8 flex items-center gap-3">
+              <Lock className="h-5 w-5 text-amber-100" />
+              <div className="text-xs uppercase tracking-[0.4em] text-amber-100/65">single-point authentication</div>
+            </div>
+
+            <label className="mb-3 block text-[10px] uppercase tracking-[0.35em] text-zinc-500">
+              clearance phrase
+            </label>
+            <input
+              value={value}
+              onChange={(e) => {
+                setValue(e.target.value);
+                if (fail) setFail(false);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  if (value === LOGIN_KEY) onUnlock();
+                  else {
+                    setFail(true);
+                    setValue("");
+                  }
+                }
+              }}
+              placeholder="ENTER AUTHORITY STRING"
+              className={`w-full rounded-2xl border bg-[#111008] px-4 py-4 font-mono text-sm tracking-[0.18em] outline-none transition ${
+                fail ? "border-red-300/40 text-red-100" : "border-amber-100/15 text-amber-50 focus:border-amber-100/35"
+              }`}
+            />
+
+            <button
+              onClick={() => {
+                if (value === LOGIN_KEY) onUnlock();
+                else {
+                  setFail(true);
+                  setValue("");
+                }
+              }}
+              className="mt-4 flex w-full items-center justify-center gap-2 rounded-2xl border border-amber-100/15 bg-gradient-to-r from-yellow-100/15 via-amber-200/10 to-orange-200/15 px-4 py-4 text-sm uppercase tracking-[0.35em] text-amber-50 transition hover:border-amber-100/30 hover:bg-amber-100/10"
+            >
+              <TerminalSquare className="h-4 w-4" />
+              unlock chamber
+            </button>
+
+            <div className="mt-6 rounded-2xl border border-amber-100/10 bg-amber-50/5 p-4 text-xs leading-6 text-zinc-400">
+              Unauthorized observers will be logged as decoys in the event stream. This system is designed to look official while denying official ownership.
+            </div>
+
+            {fail && (
+              <div className="mt-4 rounded-2xl border border-red-300/20 bg-red-100/5 px-4 py-3 text-xs uppercase tracking-[0.28em] text-red-100/80">
+                phrase rejected // external pattern detected
+              </div>
+            )}
+
+            <div className="mt-8 grid grid-cols-2 gap-3 text-xs">
+              <div className="rounded-2xl border border-amber-100/10 bg-black/25 p-4">
+                <div className="text-zinc-500">Node Integrity</div>
+                <div className="mt-2 text-2xl text-amber-50">96%</div>
+              </div>
+              <div className="rounded-2xl border border-amber-100/10 bg-black/25 p-4">
+                <div className="text-zinc-500">Looped Cameras</div>
+                <div className="mt-2 text-2xl text-amber-50">18</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function AppShell() {
+  const [active, setActive] = useState("overview");
+  const [selectedOp, setSelectedOp] = useState(operators[0]);
+  const typed = useTypedSequence();
+  const [clock, setClock] = useState(new Date());
+
+  useEffect(() => {
+    const t = setInterval(() => setClock(new Date()), 1000);
+    return () => clearInterval(t);
+  }, []);
+
+  const triggers = useMemo(
+    () => ({
+      kiyomi: typed.includes("kiyomi"),
+      cheshire: typed.includes("cheshire"),
+      hunger: typed.includes("hunger"),
+      mildew: typed.includes("mildew"),
+      sam: typed.includes("sam"),
+    }),
+    [typed]
+  );
+
+  const time = clock.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+
+  return (
+    <div className="min-h-screen overflow-hidden bg-[#060503] text-[#f4edcc] selection:bg-amber-100/20">
+      <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_top,rgba(255,220,120,0.12),transparent_26%),linear-gradient(to_bottom,rgba(0,0,0,0.1),rgba(0,0,0,0.92)),repeating-linear-gradient(to_bottom,rgba(255,255,255,0.025)_0,rgba(255,255,255,0.025)_1px,transparent_1px,transparent_4px)]" />
+      <div className="pointer-events-none fixed inset-0 opacity-20 [background-image:linear-gradient(rgba(255,230,140,0.08)_1px,transparent_1px),linear-gradient(90deg,rgba(255,230,140,0.08)_1px,transparent_1px)] [background-size:24px_24px]" />
+
+      <div className="relative z-10 grid min-h-screen grid-cols-1 xl:grid-cols-[260px_1fr_390px]">
+        <aside className="border-r border-amber-100/10 bg-black/45 p-5 backdrop-blur-xl">
+          <div className="mb-6 rounded-[24px] border border-amber-100/10 bg-amber-50/5 p-4">
+            <div className="flex items-center gap-3">
+              <div className="rounded-2xl border border-amber-100/10 bg-black/30 p-3">
+                <Radar className="h-5 w-5 text-amber-100" />
+              </div>
+              <div>
+                <div className="text-[10px] uppercase tracking-[0.4em] text-amber-100/55">mission control</div>
+                <div className="mt-1 text-lg tracking-[0.18em] text-amber-50">BLACK CHAMBER</div>
+              </div>
+            </div>
+            <div className="mt-4 rounded-2xl border border-amber-100/10 bg-black/25 p-3 text-[10px] uppercase tracking-[0.28em] text-zinc-500">
+              local time // {time}
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            {nav.map((item) => {
+              const Icon = item.icon;
+              const isActive = item.id === active;
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => setActive(item.id)}
+                  className={`flex w-full items-center gap-3 rounded-2xl border px-4 py-3 text-left transition ${
+                    isActive
+                      ? "border-amber-100/25 bg-gradient-to-r from-yellow-100/12 to-amber-200/6 text-amber-50"
+                      : "border-amber-100/5 bg-black/20 text-zinc-400 hover:border-amber-100/15 hover:text-zinc-200"
+                  }`}
+                >
+                  <Icon className="h-4 w-4" />
+                  <span className="text-xs uppercase tracking-[0.3em]">{item.label}</span>
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="mt-6 rounded-[24px] border border-amber-100/10 bg-black/25 p-4">
+            <div className="mb-3 flex items-center gap-2 text-[10px] uppercase tracking-[0.3em] text-zinc-500">
+              <BellRing className="h-3.5 w-3.5" />
+              rolling alerts
+            </div>
+            <div className="space-y-3 text-xs leading-5 text-zinc-400">
+              {alerts.slice(0, 4).map((a) => (
+                <div key={a} className="rounded-2xl border border-amber-100/8 bg-amber-50/5 p-3">{a}</div>
+              ))}
+            </div>
+          </div>
+        </aside>
+
+        <main className="border-r border-amber-100/10 bg-black/25 p-5">
+          <div className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-[24px] border border-amber-100/10 bg-black/35 px-5 py-4 backdrop-blur-xl">
+            <div>
+              <div className="text-[10px] uppercase tracking-[0.4em] text-zinc-500">counter-doa special unit command</div>
+              <h2 className="mt-2 text-2xl tracking-[0.18em] text-[#fff7d6]">CONTROL CENTER / OPERATIONAL VIEW</h2>
+            </div>
+            <div className="flex items-center gap-2 rounded-2xl border border-amber-100/10 bg-amber-50/5 px-4 py-3 text-xs uppercase tracking-[0.28em] text-amber-50">
+              <Wifi className="h-4 w-4" /> uplink mirrored // secure drift
+            </div>
+          </div>
+
+          {active === "overview" && (
+            <div className="grid gap-5 2xl:grid-cols-[1.15fr_0.85fr]">
+              <div className="space-y-5">
+                <div className="grid gap-4 md:grid-cols-4">
+                  {[
+                    ["live units", "05", Activity],
+                    ["stolen nodes", "18", Orbit],
+                    ["containment flags", "07", AlertTriangle],
+                    ["active loops", "31", ScanLine],
+                  ].map(([label, value, Icon]) => (
+                    <div key={label} className="rounded-[24px] border border-amber-100/10 bg-black/40 p-4">
+                      <div className="flex items-center justify-between text-zinc-500">
+                        <span className="text-[10px] uppercase tracking-[0.28em]">{label}</span>
+                        <Icon className="h-4 w-4 text-amber-100/70" />
+                      </div>
+                      <div className="mt-4 text-3xl text-amber-50">{value}</div>
+                      <div className="mt-3"><SmallLine points={[2, 4, 6, 4, 8, 10, 9, 13]} /></div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="grid gap-5 xl:grid-cols-[1fr_0.9fr]">
+                  <div className="rounded-[28px] border border-amber-100/10 bg-black/40 p-5">
+                    <div className="mb-4 flex items-center justify-between">
+                      <div>
+                        <div className="text-[10px] uppercase tracking-[0.35em] text-zinc-500">live mission pressure map</div>
+                        <div className="mt-2 text-lg tracking-[0.16em] text-amber-50">THREAT CONVERGENCE</div>
+                      </div>
+                      <Map className="h-5 w-5 text-amber-100/70" />
+                    </div>
+                    <div className="grid gap-5 lg:grid-cols-[320px_1fr]">
+                      <RadarSweep />
+                      <div className="space-y-4">
+                        {liveMissions.map((m) => (
+                          <div key={m.codename} className="rounded-[22px] border border-amber-100/10 bg-amber-50/5 p-4">
+                            <div className="flex items-center justify-between gap-3">
+                              <div>
+                                <div className="text-[10px] uppercase tracking-[0.32em] text-zinc-500">{m.zone}</div>
+                                <div className="mt-2 text-base tracking-[0.16em] text-amber-50">{m.codename}</div>
+                              </div>
+                              <div className="rounded-full border border-amber-100/10 px-3 py-1 text-[10px] uppercase tracking-[0.3em] text-amber-100/80">
+                                {m.state}
+                              </div>
+                            </div>
+                            <p className="mt-3 text-sm leading-6 text-zinc-400">{m.summary}</p>
+                            <div className="mt-4 h-2 overflow-hidden rounded-full border border-amber-100/10 bg-black/40">
+                              <div className="h-full rounded-full bg-gradient-to-r from-yellow-100 via-amber-200 to-orange-200" style={{ width: `${m.progress}%` }} />
+                            </div>
+                            <div className="mt-2 text-right text-[10px] uppercase tracking-[0.28em] text-zinc-500">mission completion {m.progress}%</div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="rounded-[28px] border border-amber-100/10 bg-black/40 p-5">
+                    <div className="mb-4 flex items-center justify-between">
+                      <div>
+                        <div className="text-[10px] uppercase tracking-[0.35em] text-zinc-500">intercept queue</div>
+                        <div className="mt-2 text-lg tracking-[0.16em] text-amber-50">ACTIVE EVENT ROLL</div>
+                      </div>
+                      <Siren className="h-5 w-5 text-amber-100/70" />
+                    </div>
+                    <div className="space-y-3 text-sm">
+                      {alerts.map((item, i) => (
+                        <div key={item} className="flex gap-3 rounded-[20px] border border-amber-100/8 bg-amber-50/5 p-4">
+                          <div className="pt-1 text-[10px] uppercase tracking-[0.28em] text-amber-100/70">0{i + 1}</div>
+                          <div className="leading-6 text-zinc-400">{item}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-5">
+                <div className="rounded-[28px] border border-amber-100/10 bg-black/40 p-5">
+                  <div className="mb-4 flex items-center justify-between">
+                    <div>
+                      <div className="text-[10px] uppercase tracking-[0.35em] text-zinc-500">operator spotlight</div>
+                      <div className="mt-2 text-lg tracking-[0.16em] text-amber-50">{selectedOp.id}</div>
+                    </div>
+                    <div className="rounded-full border border-amber-100/10 px-3 py-1 text-[10px] uppercase tracking-[0.3em] text-amber-100/80">
+                      {selectedOp.flag}
+                    </div>
+                  </div>
+                  <p className="text-sm leading-6 text-zinc-400">{selectedOp.detail}</p>
+                  <div className="mt-5 grid gap-3">
+                    <MetricBar value={selectedOp.sync} label="command sync" />
+                    <MetricBar value={selectedOp.stress} label="stress load" danger />
+                    <MetricBar value={selectedOp.risk} label="loss potential" danger />
+                  </div>
+                </div>
+
+                <div className="rounded-[28px] border border-amber-100/10 bg-black/40 p-5">
+                  <div className="mb-4 flex items-center justify-between">
+                    <div>
+                      <div className="text-[10px] uppercase tracking-[0.35em] text-zinc-500">surveillance digest</div>
+                      <div className="mt-2 text-lg tracking-[0.16em] text-amber-50">WATCH PANELS</div>
+                    </div>
+                    <Eye className="h-5 w-5 text-amber-100/70" />
+                  </div>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    {surveillanceFeeds.map((feed) => {
+                      const Icon = feed.icon;
+                      return (
+                        <div key={feed.title} className="rounded-[22px] border border-amber-100/10 bg-amber-50/5 p-4">
+                          <div className="flex items-start justify-between gap-3">
+                            <div>
+                              <div className="text-[10px] uppercase tracking-[0.3em] text-zinc-500">{feed.title}</div>
+                              <div className="mt-2 text-xs uppercase tracking-[0.2em] text-amber-100/70">{feed.subtitle}</div>
+                            </div>
+                            <Icon className="h-4 w-4 text-amber-100/70" />
+                          </div>
+                          <div className="mt-4 h-20 rounded-2xl border border-amber-100/8 bg-[linear-gradient(180deg,rgba(255,247,214,0.08),rgba(0,0,0,0.0)),repeating-linear-gradient(to_bottom,rgba(255,255,255,0.03)_0,rgba(255,255,255,0.03)_1px,transparent_1px,transparent_4px)] p-3">
+                            <div className="flex h-full items-end gap-1">
+                              {[18, 44, 31, 62, 38, 71, 55, feed.level].map((h, idx) => (
+                                <div key={idx} className="flex-1 rounded-t-sm bg-gradient-to-t from-amber-200/30 to-yellow-100/80" style={{ height: `${h}%` }} />
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {active === "ops" && (
+            <div className="grid gap-5 xl:grid-cols-[1.1fr_0.9fr]">
+              <div className="rounded-[28px] border border-amber-100/10 bg-black/40 p-5">
+                <div className="mb-4 flex items-center justify-between">
+                  <div>
+                    <div className="text-[10px] uppercase tracking-[0.35em] text-zinc-500">deployment stack</div>
+                    <div className="mt-2 text-lg tracking-[0.16em] text-amber-50">LIVE OPERATIONS BOARD</div>
+                  </div>
+                  <TimerReset className="h-5 w-5 text-amber-100/70" />
+                </div>
+                <div className="space-y-4">
+                  {liveMissions.map((m, i) => (
+                    <div key={m.codename} className="rounded-[24px] border border-amber-100/10 bg-amber-50/5 p-5">
+                      <div className="flex flex-wrap items-center justify-between gap-3">
+                        <div>
+                          <div className="text-[10px] uppercase tracking-[0.35em] text-zinc-500">operation {String(i + 1).padStart(2, "0")}</div>
+                          <div className="mt-2 text-xl tracking-[0.16em] text-amber-50">{m.codename}</div>
+                        </div>
+                        <div className="rounded-full border border-amber-100/10 px-3 py-1 text-[10px] uppercase tracking-[0.3em] text-amber-100/80">{m.state}</div>
+                      </div>
+                      <div className="mt-3 text-[11px] uppercase tracking-[0.28em] text-zinc-500">zone // {m.zone}</div>
+                      <p className="mt-4 text-sm leading-6 text-zinc-400">{m.summary}</p>
+                      <div className="mt-5 grid gap-3 md:grid-cols-3">
+                        <div className="rounded-2xl border border-amber-100/8 bg-black/25 p-4"><div className="text-[10px] uppercase tracking-[0.28em] text-zinc-500">Insertion</div><div className="mt-2 text-amber-50">Tunnel Vector</div></div>
+                        <div className="rounded-2xl border border-amber-100/8 bg-black/25 p-4"><div className="text-[10px] uppercase tracking-[0.28em] text-zinc-500">Command Style</div><div className="mt-2 text-amber-50">Silent Override</div></div>
+                        <div className="rounded-2xl border border-amber-100/8 bg-black/25 p-4"><div className="text-[10px] uppercase tracking-[0.28em] text-zinc-500">Collateral</div><div className="mt-2 text-amber-50">Accepted</div></div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="space-y-5">
+                <div className="rounded-[28px] border border-amber-100/10 bg-black/40 p-5">
+                  <div className="text-[10px] uppercase tracking-[0.35em] text-zinc-500">mission strings</div>
+                  <div className="mt-2 text-lg tracking-[0.16em] text-amber-50">COMMAND INTENT</div>
+                  <div className="mt-4 space-y-3 text-sm leading-6 text-zinc-400">
+                    <p className="rounded-2xl border border-amber-100/8 bg-amber-50/5 p-4">This branch exists to cut the DOA's nerves without triggering a visible war. It steals authority first, bodies second, and public trust last.</p>
+                    <p className="rounded-2xl border border-amber-100/8 bg-amber-50/5 p-4">Operators are treated like strategic malfunctions aimed in the correct direction. Success metrics prioritize panic shaping, command confusion, and denial of clean narratives.</p>
+                    <p className="rounded-2xl border border-amber-100/8 bg-amber-50/5 p-4">If a mission looks impossible on paper, it is probably assigned here because the people going in are already impossible in person.</p>
+                  </div>
+                </div>
+                <div className="rounded-[28px] border border-amber-100/10 bg-black/40 p-5">
+                  <div className="text-[10px] uppercase tracking-[0.35em] text-zinc-500">signal saturation</div>
+                  <div className="mt-2 text-lg tracking-[0.16em] text-amber-50">UPLINK NOISE PROFILE</div>
+                  <div className="mt-4 h-52 rounded-[24px] border border-amber-100/8 bg-black/30 p-4">
+                    <div className="flex h-full items-end gap-2">
+                      {[24, 38, 31, 54, 46, 68, 72, 61, 79, 91, 77, 64].map((v, i) => (
+                        <div key={i} className="flex-1 rounded-t-md bg-gradient-to-t from-amber-200/25 via-yellow-100/40 to-yellow-100/85" style={{ height: `${v}%` }} />
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {active === "roster" && (
+            <div className="grid gap-5 xl:grid-cols-[0.8fr_1.2fr]">
+              <div className="rounded-[28px] border border-amber-100/10 bg-black/40 p-5">
+                <div className="mb-4 flex items-center justify-between">
+                  <div>
+                    <div className="text-[10px] uppercase tracking-[0.35em] text-zinc-500">special unit roster</div>
+                    <div className="mt-2 text-lg tracking-[0.16em] text-amber-50">OPERATOR GRID</div>
+                  </div>
+                  <Search className="h-5 w-5 text-amber-100/70" />
+                </div>
+                <div className="space-y-3">
+                  {operators.map((op) => (
+                    <button
+                      key={op.id}
+                      onClick={() => setSelectedOp(op)}
+                      className={`w-full rounded-[22px] border p-4 text-left transition ${
+                        selectedOp.id === op.id
+                          ? "border-amber-100/25 bg-gradient-to-r from-yellow-100/10 to-amber-200/5"
+                          : "border-amber-100/8 bg-amber-50/5 hover:border-amber-100/15"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between gap-3">
+                        <div>
+                          <div className="text-[10px] uppercase tracking-[0.32em] text-zinc-500">{op.kind}</div>
+                          <div className="mt-2 text-base tracking-[0.16em] text-amber-50">{op.id}</div>
+                        </div>
+                        <ChevronRight className="h-4 w-4 text-amber-100/70" />
+                      </div>
+                      <div className="mt-3 text-xs uppercase tracking-[0.2em] text-zinc-400">{op.role}</div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="rounded-[28px] border border-amber-100/10 bg-black/40 p-5">
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <div className="text-[10px] uppercase tracking-[0.35em] text-zinc-500">selected operator</div>
+                    <div className="mt-2 text-2xl tracking-[0.18em] text-amber-50">{selectedOp.id}</div>
+                    <div className="mt-2 text-xs uppercase tracking-[0.22em] text-amber-100/75">{selectedOp.role}</div>
+                  </div>
+                  <div className="rounded-full border border-amber-100/10 px-3 py-1 text-[10px] uppercase tracking-[0.3em] text-amber-100/80">
+                    {selectedOp.status}
+                  </div>
+                </div>
+                <div className="mt-5 grid gap-4 md:grid-cols-2">
+                  <div className="rounded-[24px] border border-amber-100/8 bg-amber-50/5 p-4">
+                    <div className="text-[10px] uppercase tracking-[0.3em] text-zinc-500">location</div>
+                    <div className="mt-3 text-sm leading-6 text-zinc-300">{selectedOp.location}</div>
+                  </div>
+                  <div className="rounded-[24px] border border-amber-100/8 bg-amber-50/5 p-4">
+                    <div className="text-[10px] uppercase tracking-[0.3em] text-zinc-500">warning flag</div>
+                    <div className="mt-3 text-sm leading-6 text-zinc-300">{selectedOp.flag}</div>
+                  </div>
+                </div>
+                <div className="mt-5 grid gap-3">
+                  <MetricBar value={selectedOp.sync} label="command sync" />
+                  <MetricBar value={selectedOp.stress} label="stress load" danger />
+                  <MetricBar value={selectedOp.risk} label="engagement risk" danger />
+                </div>
+                <div className="mt-5 grid gap-4 md:grid-cols-2">
+                  <div className="rounded-[24px] border border-amber-100/8 bg-black/25 p-4">
+                    <div className="text-[10px] uppercase tracking-[0.3em] text-zinc-500">clinical note</div>
+                    <p className="mt-3 text-sm leading-6 text-zinc-400">{selectedOp.notes}</p>
+                  </div>
+                  <div className="rounded-[24px] border border-amber-100/8 bg-black/25 p-4">
+                    <div className="text-[10px] uppercase tracking-[0.3em] text-zinc-500">behavioral note</div>
+                    <p className="mt-3 text-sm leading-6 text-zinc-400">{selectedOp.detail}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {active === "surveillance" && (
+            <div className="grid gap-5 lg:grid-cols-2 2xl:grid-cols-3">
+              {surveillanceFeeds.concat(surveillanceFeeds).map((feed, idx) => {
+                const Icon = feed.icon;
+                return (
+                  <div key={`${feed.title}-${idx}`} className="rounded-[28px] border border-amber-100/10 bg-black/40 p-5">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="text-[10px] uppercase tracking-[0.32em] text-zinc-500">{feed.title}</div>
+                        <div className="mt-2 text-xs uppercase tracking-[0.22em] text-amber-100/70">{feed.subtitle}</div>
+                      </div>
+                      <Icon className="h-5 w-5 text-amber-100/70" />
+                    </div>
+                    <div className="mt-4 h-52 rounded-[24px] border border-amber-100/8 bg-[linear-gradient(180deg,rgba(255,247,214,0.08),rgba(0,0,0,0.0)),repeating-linear-gradient(to_bottom,rgba(255,255,255,0.03)_0,rgba(255,255,255,0.03)_1px,transparent_1px,transparent_4px)] p-4">
+                      <div className="grid h-full grid-cols-8 gap-1">
+                        {Array.from({ length: 48 }).map((_, i) => (
+                          <div key={i} className={`rounded-sm ${i % 7 === 0 ? "bg-amber-100/60" : i % 5 === 0 ? "bg-yellow-100/25" : "bg-white/5"}`} />
+                        ))}
+                      </div>
+                    </div>
+                    <div className="mt-4 flex items-center justify-between text-[10px] uppercase tracking-[0.28em] text-zinc-500">
+                      <span>confidence drift</span>
+                      <span className="text-amber-100/80">{feed.level}%</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {active === "biometrics" && (
+            <div className="grid gap-5 lg:grid-cols-2">
+              {operators.map((op) => (
+                <div key={op.id} className="rounded-[28px] border border-amber-100/10 bg-black/40 p-5">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="text-[10px] uppercase tracking-[0.32em] text-zinc-500">{op.kind}</div>
+                      <div className="mt-2 text-lg tracking-[0.16em] text-amber-50">{op.id}</div>
+                    </div>
+                    <HeartPulse className="h-5 w-5 text-amber-100/70" />
+                  </div>
+                  <div className="mt-5 grid gap-4 md:grid-cols-4">
+                    <div className="rounded-2xl border border-amber-100/8 bg-amber-50/5 p-4"><div className="text-[10px] uppercase tracking-[0.28em] text-zinc-500">pulse</div><div className="mt-2 text-2xl text-amber-50">{op.pulse}</div></div>
+                    <div className="rounded-2xl border border-amber-100/8 bg-amber-50/5 p-4"><div className="text-[10px] uppercase tracking-[0.28em] text-zinc-500">stress</div><div className="mt-2 text-2xl text-amber-50">{op.stress}%</div></div>
+                    <div className="rounded-2xl border border-amber-100/8 bg-amber-50/5 p-4"><div className="text-[10px] uppercase tracking-[0.28em] text-zinc-500">sync</div><div className="mt-2 text-2xl text-amber-50">{op.sync}%</div></div>
+                    <div className="rounded-2xl border border-amber-100/8 bg-amber-50/5 p-4"><div className="text-[10px] uppercase tracking-[0.28em] text-zinc-500">temp</div><div className="mt-2 text-2xl text-amber-50">{op.temp}</div></div>
+                  </div>
+                  <div className="mt-5 rounded-[24px] border border-amber-100/8 bg-black/25 p-4 text-amber-100/90">
+                    <SmallLine points={[op.pulse / 2, op.pulse * 0.7, op.pulse * 0.6, op.pulse * 0.9, op.pulse * 0.8, op.pulse, op.pulse * 0.76, op.pulse * 0.92]} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {active === "routing" && (
+            <div className="grid gap-5 xl:grid-cols-[1.15fr_0.85fr]">
+              <div className="rounded-[28px] border border-amber-100/10 bg-black/40 p-5">
+                <div className="text-[10px] uppercase tracking-[0.35em] text-zinc-500">command lattice</div>
+                <div className="mt-2 text-lg tracking-[0.16em] text-amber-50">SYSTEM ROUTING MAP</div>
+                <div className="mt-5 grid gap-4 md:grid-cols-3">
+                  {[
+                    "GHOST RELAY",
+                    "VEIL MIRROR",
+                    "FALSE DISPATCH",
+                    "SUBFLOOR TUNNEL",
+                    "BLACK SWITCH",
+                    "RED CHANNEL",
+                    "NULL CABINET",
+                    "MASKED EXIT",
+                    "CHOIR LOOP",
+                  ].map((node, i) => (
+                    <div key={node} className="relative rounded-[24px] border border-amber-100/10 bg-amber-50/5 p-4">
+                      <div className="text-[10px] uppercase tracking-[0.3em] text-zinc-500">node {String(i + 1).padStart(2, "0")}</div>
+                      <div className="mt-2 text-base tracking-[0.14em] text-amber-50">{node}</div>
+                      <div className="mt-4 h-2 rounded-full bg-black/40">
+                        <div className="h-full rounded-full bg-gradient-to-r from-yellow-100 via-amber-200 to-orange-200" style={{ width: `${50 + ((i * 7) % 43)}%` }} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="rounded-[28px] border border-amber-100/10 bg-black/40 p-5">
+                <div className="text-[10px] uppercase tracking-[0.35em] text-zinc-500">doa compromise notes</div>
+                <div className="mt-2 text-lg tracking-[0.16em] text-amber-50">INTERNAL METHOD</div>
+                <div className="mt-4 space-y-3 text-sm leading-6 text-zinc-400">
+                  <div className="rounded-[20px] border border-amber-100/8 bg-amber-50/5 p-4">We do not defeat the DOA head-on. We teach it to misread itself until its own systems open the door for us.</div>
+                  <div className="rounded-[20px] border border-amber-100/8 bg-amber-50/5 p-4">Signal theft is cleaner than open warfare. A city that trusts the wrong siren is softer than concrete.</div>
+                  <div className="rounded-[20px] border border-amber-100/8 bg-amber-50/5 p-4">The perfect strike leaves surviving witnesses convinced the wrong thing happened.</div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {active === "containment" && (
+            <div className="grid gap-5 xl:grid-cols-[0.95fr_1.05fr]">
+              <div className="rounded-[28px] border border-amber-100/10 bg-black/40 p-5">
+                <div className="text-[10px] uppercase tracking-[0.35em] text-zinc-500">unstable compartments</div>
+                <div className="mt-2 text-lg tracking-[0.16em] text-amber-50">CONTAINMENT STATE</div>
+                <div className="mt-5 space-y-4">
+                  {[
+                    ["Tomcat Decon Wing", "Spore bloom beneath floor seams; breathing sound reported after vacancy.", 86],
+                    ["Fish Restraint Kitchen", "Hunger agitation high. Requested access beyond ration protocol.", 94],
+                    ["Burn Channel", "Cinder performing correction drills unsupervised.", 62],
+                    ["Signal Suite", "Veil camera drift causing testimony mismatch.", 71],
+                  ].map(([name, text, level]) => (
+                    <div key={name} className="rounded-[22px] border border-amber-100/10 bg-amber-50/5 p-4">
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="text-base tracking-[0.14em] text-amber-50">{name}</div>
+                        <div className="text-[10px] uppercase tracking-[0.3em] text-amber-100/80">risk {level}%</div>
+                      </div>
+                      <p className="mt-3 text-sm leading-6 text-zinc-400">{text}</p>
+                      <div className="mt-4 h-2 rounded-full bg-black/40"><div className="h-full rounded-full bg-gradient-to-r from-yellow-100 via-amber-200 to-orange-200" style={{ width: `${level}%` }} /></div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="rounded-[28px] border border-amber-100/10 bg-black/40 p-5">
+                <div className="text-[10px] uppercase tracking-[0.35em] text-zinc-500">response doctrine</div>
+                <div className="mt-2 text-lg tracking-[0.16em] text-amber-50">FAILURE PROCEDURE</div>
+                <div className="mt-5 grid gap-4 md:grid-cols-2">
+                  {[
+                    ["SPREAD EVENT", "Lock vents, falsify cause-of-death traffic, reroute medics, burn maps after copy."],
+                    ["HUNGER BREAK", "Feed or kill fast. There is no useful middle stage once the room turns red."],
+                    ["THERMAL CASCADE", "Do not let Cinder and Tomcat share a hallway without command consent."],
+                    ["PERCEPTION LOSS", "If Veil was in the room, rewrite all confidence reports from scratch."],
+                  ].map(([title, body]) => (
+                    <div key={title} className="rounded-[24px] border border-amber-100/8 bg-amber-50/5 p-4">
+                      <div className="text-sm uppercase tracking-[0.24em] text-amber-50">{title}</div>
+                      <p className="mt-3 text-sm leading-6 text-zinc-400">{body}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+        </main>
+
+        <aside className="bg-black/45 p-5 backdrop-blur-xl">
+          <div className="space-y-5">
+            <div className="rounded-[28px] border border-amber-100/10 bg-black/35 p-5">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-[10px] uppercase tracking-[0.35em] text-zinc-500">selected unit quicklook</div>
+                  <div className="mt-2 text-lg tracking-[0.16em] text-amber-50">{selectedOp.id}</div>
+                </div>
+                <Cpu className="h-5 w-5 text-amber-100/70" />
+              </div>
+              <div className="mt-4 space-y-3">
+                <div className="rounded-2xl border border-amber-100/8 bg-amber-50/5 p-4 text-sm leading-6 text-zinc-400">{selectedOp.notes}</div>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="rounded-2xl border border-amber-100/8 bg-black/25 p-4"><div className="text-[10px] uppercase tracking-[0.28em] text-zinc-500">status</div><div className="mt-2 text-amber-50">{selectedOp.status}</div></div>
+                  <div className="rounded-2xl border border-amber-100/8 bg-black/25 p-4"><div className="text-[10px] uppercase tracking-[0.28em] text-zinc-500">risk</div><div className="mt-2 text-amber-50">{selectedOp.risk}%</div></div>
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-[28px] border border-amber-100/10 bg-black/35 p-5">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-[10px] uppercase tracking-[0.35em] text-zinc-500">system weather</div>
+                  <div className="mt-2 text-lg tracking-[0.16em] text-amber-50">CONTROL PRESSURE</div>
+                </div>
+                <Gauge className="h-5 w-5 text-amber-100/70" />
+              </div>
+              <div className="mt-4 grid gap-3">
+                <MetricBar value={91} label="network strain" danger />
+                <MetricBar value={74} label="panic viability" />
+                <MetricBar value={83} label="misdirection success" />
+              </div>
+            </div>
+
+            <div className="rounded-[28px] border border-amber-100/10 bg-black/35 p-5">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-[10px] uppercase tracking-[0.35em] text-zinc-500">sealed command notes</div>
+                  <div className="mt-2 text-lg tracking-[0.16em] text-amber-50">INTERNAL REMARKS</div>
+                </div>
+                <FlaskConical className="h-5 w-5 text-amber-100/70" />
+              </div>
+              <div className="mt-4 space-y-3 text-sm leading-6 text-zinc-400">
+                <div className="rounded-2xl border border-amber-100/8 bg-amber-50/5 p-4">Tomcat is not to be referred to as a contamination issue within earshot. He becomes angry when reminded.</div>
+                <div className="rounded-2xl border border-amber-100/8 bg-amber-50/5 p-4">Fish needs a target before she needs a speech. People keep trying the speech first.</div>
+                <div className="rounded-2xl border border-amber-100/8 bg-amber-50/5 p-4">What we are building is not a team. It is an argument against ordinary limits.</div>
+              </div>
+            </div>
+          </div>
+        </aside>
+      </div>
+
+      {triggers.kiyomi && (
+        <div className="pointer-events-none fixed inset-0 z-50 flex items-center justify-center bg-black/84 backdrop-blur-sm">
+          <div className="rounded-[28px] border border-amber-100/15 bg-black/80 px-8 py-6 text-center shadow-[0_0_80px_rgba(255,230,130,0.08)]">
+            <div className="text-[10px] uppercase tracking-[0.45em] text-amber-100/55">unsanctioned reality intrusion</div>
+            <div className="mt-4 text-3xl tracking-[0.24em] text-[#fff4c0]">I see you sam &lt;3</div>
+            <div className="mt-3 text-sm tracking-[0.14em] text-zinc-500">source tag // KIYOMI // smiling somewhere off-screen</div>
+          </div>
+        </div>
+      )}
+
+      {triggers.hunger && (
+        <div className="pointer-events-none fixed bottom-6 right-6 z-50 max-w-md rounded-[24px] border border-amber-100/15 bg-black/85 p-5 shadow-[0_0_40px_rgba(255,230,130,0.07)]">
+          <div className="text-[10px] uppercase tracking-[0.38em] text-amber-100/60">hidden behavioral scrape</div>
+          <div className="mt-3 text-lg tracking-[0.16em] text-amber-50">FISH // PRIVATE THREAD</div>
+          <p className="mt-3 text-sm leading-6 text-zinc-400">
+            He smells wrong. Like rain trapped in drywall. Like something that already died and got back up because it was too stubborn to stop. I don't think I want to eat him. I think I want to know if he tastes like ending.
+          </p>
+        </div>
+      )}
+
+      {triggers.mildew && (
+        <div className="pointer-events-none fixed left-6 top-6 z-50 max-w-sm rounded-[24px] border border-amber-100/15 bg-black/85 p-5 shadow-[0_0_40px_rgba(255,230,130,0.07)]">
+          <div className="text-[10px] uppercase tracking-[0.38em] text-amber-100/60">sealed maintenance memo</div>
+          <div className="mt-3 text-lg tracking-[0.16em] text-amber-50">TOMCAT // RESIDUE NOTICE</div>
+          <p className="mt-3 text-sm leading-6 text-zinc-400">
+            Maintenance reported mold growth spelling partial words near decon drain three. Nobody wrote them down for long enough to be certain. The letters looked like they were trying to become a sentence.
+          </p>
+        </div>
+      )}
+
+      {triggers.sam && !triggers.kiyomi && (
+        <div className="pointer-events-none fixed inset-x-0 top-0 z-40 border-b border-amber-100/10 bg-amber-100/5 px-6 py-3 text-center text-[10px] uppercase tracking-[0.38em] text-amber-100/60">
+          watcher acknowledged
+        </div>
+      )}
+
+      {triggers.cheshire && (
+        <div className="pointer-events-none fixed inset-0 z-40 flex items-center justify-center bg-black/70">
+          <div className="text-center">
+            <div className="text-6xl text-amber-100/90">⌒‿⌒</div>
+            <div className="mt-4 text-[10px] uppercase tracking-[0.5em] text-amber-100/55">signal smiling back</div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default function BlackChamberControlCenter() {
+  const [unlocked, setUnlocked] = useState(false);
+  return unlocked ? <AppShell /> : <LoginScreen onUnlock={() => setUnlocked(true)} />;
+}
